@@ -1,0 +1,36 @@
+node_modules/
+.bundle/
+vendor/bundle
+
+# Xcode
+ios/build/
+ios/Pods/
+*.xcworkspace
+*.xcuserdata
+
+# Android
+android/app/build/
+android/.gradle/
+android/build/
+local.properties
+*.apk
+*.aab
+
+# Metro
+.metro-health-check*
+
+# Misc
+.DS_Store
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Testing
+coverage/
+
+# Environment
+.env
+.env.*
