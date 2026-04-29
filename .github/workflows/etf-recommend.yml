@@ -1,0 +1,39 @@
+name: ETF Recommendation
+
+on:
+  schedule:
+    # 매주 월요일 KST 16:30 = UTC 07:30 (장 마감 후)
+    - cron: "30 7 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "메일 발송 생략 (1 입력시)"
+        required: false
+        default: "0"
+
+jobs:
+  recommend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run strategy
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+          HOLDINGS: ${{ vars.HOLDINGS }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: python -m strategy.main
