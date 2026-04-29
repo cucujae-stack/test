@@ -38,7 +38,8 @@ def main() -> int:
     run_date = datetime.now().strftime("%Y-%m-%d")
     html = render_html(signals, run_date=run_date, top_n=TOP_N)
 
-    if os.environ.get("DRY_RUN") == "1":
+    # 스케줄 실행 시 DRY_RUN은 빈 문자열 → 메일 발송. "1"일 때만 생략.
+    if os.environ.get("DRY_RUN", "0") == "1":
         print("  DRY_RUN=1 — 메일 발송 생략")
         print(html)
         return 0

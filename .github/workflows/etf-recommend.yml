@@ -9,7 +9,7 @@ on:
       dry_run:
         description: "메일 발송 생략 (1 입력시)"
         required: false
-        default: "0"
+        default: "1"
 
 jobs:
   recommend:
