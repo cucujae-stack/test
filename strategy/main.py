@@ -1,12 +1,14 @@
-"""엔트리: 데이터 → 시그널 → 메일."""
+"""엔트리: 데이터 → 시그널 → 메일 → 시트."""
 from __future__ import annotations
 
+import json
 import os
 import sys
+import urllib.request
 from datetime import datetime
 
 from .data import fetch_close_panel
-from .dual_momentum import TOP_N, compute_signals
+from .dual_momentum import TOP_N, Signal, compute_signals
 from .notify import render_html, send_email
 from .universe import ETF_UNIVERSE
 
@@ -16,6 +18,32 @@ def _env(name: str, required: bool = True, default: str | None = None) -> str:
     if required and not val:
         raise RuntimeError(f"환경변수 {name} 가 설정되지 않았습니다.")
     return val or ""
+
+
+def push_signals_to_sheet(url: str, run_date: str, signals: list[Signal]) -> None:
+    payload = {
+        "run_date": run_date,
+        "signals": [
+            {
+                "action": s.action,
+                "ticker": s.ticker,
+                "name": s.name,
+                "momentum_12m": s.momentum_12m,
+                "price": s.price,
+                "reason": s.reason,
+            }
+            for s in signals
+        ],
+    }
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        body = resp.read().decode("utf-8")
+        print(f"  Apps Script 응답: {body}")
 
 
 def main() -> int:
@@ -55,8 +83,18 @@ def main() -> int:
     if not signals:
         print("  추천 종목 없음 — 현금 유지 권장")
 
-    print("[4/4] 메일 발송...")
     run_date = datetime.now().strftime("%Y-%m-%d")
+
+    # 구글 시트 "추천" 탭 업데이트 (Apps Script 웹훅)
+    apps_script_url = os.environ.get("APPS_SCRIPT_URL", "")
+    if apps_script_url:
+        print("[4/5] 구글 시트 추천 탭 업데이트...")
+        try:
+            push_signals_to_sheet(apps_script_url, run_date, signals)
+        except Exception as exc:
+            print(f"  ⚠️ Apps Script 호출 실패: {exc}")
+
+    print("[5/5] 메일 발송...")
 
     # 보유종목 평가손익 계산
     portfolio_rows = []

@@ -36,5 +36,6 @@ jobs:
           MAIL_TO: ${{ secrets.MAIL_TO }}
           SHEET_HOLDINGS_URL: ${{ secrets.SHEET_HOLDINGS_URL }}
           SHEET_SETTINGS_URL: ${{ secrets.SHEET_SETTINGS_URL }}
+          APPS_SCRIPT_URL: ${{ secrets.APPS_SCRIPT_URL }}
           DRY_RUN: ${{ github.event.inputs.dry_run }}
         run: python -m strategy.main
