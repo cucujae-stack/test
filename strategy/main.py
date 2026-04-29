@@ -28,6 +28,7 @@ def push_signals_to_sheet(
     principal: float | None,
 ) -> None:
     payload = {
+        "token": os.environ.get("APPS_SCRIPT_TOKEN", ""),
         "run_date": run_date,
         "signals": [
             {
