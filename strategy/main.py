@@ -10,7 +10,7 @@ from datetime import datetime
 from .data import fetch_close_panel
 from .dual_momentum import TOP_N, Signal, compute_signals
 from .notify import render_html, send_email
-from .universe import ETF_UNIVERSE
+from .universe import ETF_DESCRIPTIONS, ETF_UNIVERSE
 
 
 def _env(name: str, required: bool = True, default: str | None = None) -> str:
@@ -34,6 +34,7 @@ def push_signals_to_sheet(
                 "action": s.action,
                 "ticker": s.ticker,
                 "name": s.name,
+                "description": s.description,
                 "momentum_12m": s.momentum_12m,
                 "price": s.price,
                 "reason": s.reason,
@@ -86,8 +87,19 @@ def main() -> int:
     closes = fetch_close_panel(all_tickers, lookback_days=400)
     print(f"  - 수집 완료: {closes.shape[0]} 거래일 × {closes.shape[1]} 종목")
 
+    # 유니버스 + 사용자 보유종목 이름을 모두 합친 매핑
+    full_name_map = dict(ETF_UNIVERSE)
+    for h in sheet_holdings:
+        if h.ticker not in full_name_map:
+            full_name_map[h.ticker] = h.name
+
     print("[3/5] 듀얼 모멘텀 시그널 산출...")
-    signals = compute_signals(closes, ETF_UNIVERSE, current_holdings=holding_tickers)
+    signals = compute_signals(
+        closes,
+        full_name_map,
+        current_holdings=holding_tickers,
+        description_map=ETF_DESCRIPTIONS,
+    )
     for s in signals:
         print(f"  {s.action:4s} {s.ticker} {s.name} 12M={s.momentum_12m * 100:+.2f}%")
     if not signals:

@@ -26,14 +26,17 @@ class Signal:
     price: float
     ma200: float
     reason: str
+    description: str = ""
 
 
 def compute_signals(
     closes: pd.DataFrame,
     name_map: dict[str, str],
     current_holdings: list[str] | None = None,
+    description_map: dict[str, str] | None = None,
 ) -> list[Signal]:
     current_holdings = current_holdings or []
+    description_map = description_map or {}
 
     if len(closes) < LOOKBACK_DAYS + 1:
         raise ValueError(
@@ -67,6 +70,7 @@ def compute_signals(
                 price=float(last[ticker]),
                 ma200=float(ma200[ticker]),
                 reason=reason,
+                description=description_map.get(ticker, ""),
             )
         )
 
@@ -90,6 +94,7 @@ def compute_signals(
                 price=float(last[ticker]),
                 ma200=ma,
                 reason=reason,
+                description=description_map.get(ticker, ""),
             )
         )
 
