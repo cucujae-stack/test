@@ -1,17 +1,15 @@
-"""Google Sheets에서 보유종목과 설정을 읽어옴.
+"""Google Sheets CSV 공개 URL로 보유종목과 설정을 읽어옴.
 
 시트 구조:
   "보유종목" 탭: A=티커(.KS), B=종목명, C=매수일(YYYY-MM-DD), D=매수가, E=수량
-  "설정"   탭: A1="총원금", B1=금액(숫자)
+  "설정"   탭: A=항목명, B=값  (예: 총원금 / 5000000)
 """
 from __future__ import annotations
 
-import json
 import os
 from dataclasses import dataclass
 
-import gspread
-from google.oauth2.service_account import Credentials
+import pandas as pd
 
 
 @dataclass
@@ -23,47 +21,35 @@ class Holding:
     qty: float
 
 
-def _client() -> gspread.Client:
-    creds_json = os.environ["GOOGLE_CREDENTIALS"]
-    info = json.loads(creds_json)
-    scopes = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
-    creds = Credentials.from_service_account_info(info, scopes=scopes)
-    return gspread.authorize(creds)
-
-
-def load_holdings(sheet_id: str) -> list[Holding]:
-    gc = _client()
-    ws = gc.open_by_key(sheet_id).worksheet("보유종목")
-    rows = ws.get_all_values()
+def load_holdings(url: str) -> list[Holding]:
+    df = pd.read_csv(url, header=0)
+    df.columns = ["ticker", "name", "buy_date", "buy_price", "qty"] + list(df.columns[5:])
     holdings: list[Holding] = []
-    for row in rows[1:]:  # 헤더 건너뜀
-        if len(row) < 5 or not row[0].strip():
+    for _, row in df.iterrows():
+        ticker = str(row["ticker"]).strip()
+        if not ticker or ticker.lower() == "nan":
             continue
-        ticker, name, buy_date, buy_price, qty = row[:5]
         try:
             holdings.append(
                 Holding(
-                    ticker=ticker.strip(),
-                    name=name.strip(),
-                    buy_date=buy_date.strip(),
-                    buy_price=float(buy_price.replace(",", "")),
-                    qty=float(qty.replace(",", "")),
+                    ticker=ticker,
+                    name=str(row["name"]).strip(),
+                    buy_date=str(row["buy_date"]).strip(),
+                    buy_price=float(str(row["buy_price"]).replace(",", "")),
+                    qty=float(str(row["qty"]).replace(",", "")),
                 )
             )
-        except ValueError:
+        except (ValueError, KeyError):
             continue
     return holdings
 
 
-def load_principal(sheet_id: str) -> float | None:
-    """총 원금 반환. 시트에 없으면 None."""
-    gc = _client()
+def load_principal(url: str) -> float | None:
     try:
-        ws = gc.open_by_key(sheet_id).worksheet("설정")
-        rows = ws.get_all_values()
-        for row in rows:
-            if len(row) >= 2 and "원금" in row[0]:
-                return float(row[1].replace(",", ""))
+        df = pd.read_csv(url, header=None)
+        for _, row in df.iterrows():
+            if len(row) >= 2 and "원금" in str(row[0]):
+                return float(str(row[1]).replace(",", ""))
     except Exception:
         pass
     return None

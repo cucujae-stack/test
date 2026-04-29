@@ -18,13 +18,6 @@ def _env(name: str, required: bool = True, default: str | None = None) -> str:
     return val or ""
 
 
-def _load_holdings_from_sheet(sheet_id: str):
-    from .sheets import load_holdings, load_principal
-    holdings = load_holdings(sheet_id)
-    principal = load_principal(sheet_id)
-    return holdings, principal
-
-
 def main() -> int:
     tickers = list(ETF_UNIVERSE.keys())
 
@@ -32,14 +25,22 @@ def main() -> int:
     closes = fetch_close_panel(tickers, lookback_days=400)
     print(f"  - 수집 완료: {closes.shape[0]} 거래일 × {closes.shape[1]} 종목")
 
-    # 보유종목 로드 (Google Sheet 우선, 없으면 env var 폴백)
+    # 보유종목 로드 (Google Sheet CSV URL 우선, 없으면 env var 폴백)
     sheet_holdings = []
     principal = None
-    sheet_id = os.environ.get("GOOGLE_SHEET_ID", "")
-    if sheet_id and os.environ.get("GOOGLE_CREDENTIALS", ""):
+    holdings_url = os.environ.get("SHEET_HOLDINGS_URL", "")
+    settings_url = os.environ.get("SHEET_SETTINGS_URL", "")
+
+    if holdings_url:
         print("[2/4] Google Sheet에서 보유종목 로드...")
-        sheet_holdings, principal = _load_holdings_from_sheet(sheet_id)
-        print(f"  - 보유종목 {len(sheet_holdings)}개, 총원금 {principal:,.0f}원" if principal else f"  - 보유종목 {len(sheet_holdings)}개")
+        from .sheets import load_holdings, load_principal
+        sheet_holdings = load_holdings(holdings_url)
+        if settings_url:
+            principal = load_principal(settings_url)
+        print(
+            f"  - 보유종목 {len(sheet_holdings)}개"
+            + (f", 총원금 {principal:,.0f}원" if principal else "")
+        )
     else:
         print("[2/4] 보유종목: 환경변수 HOLDINGS 사용")
 
