@@ -20,7 +20,13 @@ def _env(name: str, required: bool = True, default: str | None = None) -> str:
     return val or ""
 
 
-def push_signals_to_sheet(url: str, run_date: str, signals: list[Signal]) -> None:
+def push_signals_to_sheet(
+    url: str,
+    run_date: str,
+    signals: list[Signal],
+    portfolio_rows: list[dict],
+    principal: float | None,
+) -> None:
     payload = {
         "run_date": run_date,
         "signals": [
@@ -34,6 +40,8 @@ def push_signals_to_sheet(url: str, run_date: str, signals: list[Signal]) -> Non
             }
             for s in signals
         ],
+        "portfolio": portfolio_rows,
+        "principal": principal,
     }
     req = urllib.request.Request(
         url,
@@ -90,7 +98,7 @@ def main() -> int:
     if apps_script_url:
         print("[4/5] 구글 시트 추천 탭 업데이트...")
         try:
-            push_signals_to_sheet(apps_script_url, run_date, signals)
+            push_signals_to_sheet(apps_script_url, run_date, signals, portfolio_rows, principal)
         except Exception as exc:
             print(f"  ⚠️ Apps Script 호출 실패: {exc}")
 
