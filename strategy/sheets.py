@@ -23,6 +23,10 @@ class Holding:
 
 def load_holdings(url: str) -> list[Holding]:
     df = pd.read_csv(url, header=0)
+    df = df.dropna(axis=1, how="all")   # 완전히 빈 열 제거
+    df = df.dropna(axis=0, how="all")   # 완전히 빈 행 제거
+    if df.shape[1] < 5:
+        return []
     df.columns = ["ticker", "name", "buy_date", "buy_price", "qty"] + list(df.columns[5:])
     holdings: list[Holding] = []
     for _, row in df.iterrows():
