@@ -35,8 +35,8 @@ def load_holdings(url: str) -> list[Holding]:
                     ticker=ticker,
                     name=str(row["name"]).strip(),
                     buy_date=str(row["buy_date"]).strip(),
-                    buy_price=float(str(row["buy_price"]).replace(",", "")),
-                    qty=float(str(row["qty"]).replace(",", "")),
+                    buy_price=_clean_number(str(row["buy_price"])),
+                    qty=_clean_number(str(row["qty"])),
                 )
             )
         except (ValueError, KeyError):
@@ -44,12 +44,16 @@ def load_holdings(url: str) -> list[Holding]:
     return holdings
 
 
+def _clean_number(val: str) -> float:
+    return float(str(val).replace(",", "").replace("₩", "").replace("\\", "").strip())
+
+
 def load_principal(url: str) -> float | None:
     try:
         df = pd.read_csv(url, header=None)
         for _, row in df.iterrows():
             if len(row) >= 2 and "원금" in str(row[0]):
-                return float(str(row[1]).replace(",", ""))
+                return _clean_number(str(row[1]))
     except Exception:
         pass
     return None
