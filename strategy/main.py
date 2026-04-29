@@ -95,17 +95,6 @@ def main() -> int:
 
     run_date = datetime.now().strftime("%Y-%m-%d")
 
-    # 구글 시트 "추천" 탭 업데이트 (Apps Script 웹훅)
-    apps_script_url = os.environ.get("APPS_SCRIPT_URL", "")
-    if apps_script_url:
-        print("[4/5] 구글 시트 추천 탭 업데이트...")
-        try:
-            push_signals_to_sheet(apps_script_url, run_date, signals, portfolio_rows, principal)
-        except Exception as exc:
-            print(f"  ⚠️ Apps Script 호출 실패: {exc}")
-
-    print("[5/5] 메일 발송...")
-
     # 보유종목 평가손익 계산
     portfolio_rows = []
     if sheet_holdings:
@@ -129,6 +118,17 @@ def main() -> int:
                 "pnl": pnl,
                 "pnl_pct": pnl_pct,
             })
+
+    # 구글 시트 "추천" 탭 업데이트 (Apps Script 웹훅)
+    apps_script_url = os.environ.get("APPS_SCRIPT_URL", "")
+    if apps_script_url:
+        print("[4/5] 구글 시트 추천 탭 업데이트...")
+        try:
+            push_signals_to_sheet(apps_script_url, run_date, signals, portfolio_rows, principal)
+        except Exception as exc:
+            print(f"  ⚠️ Apps Script 호출 실패: {exc}")
+
+    print("[5/5] 메일 발송...")
 
     html = render_html(
         signals,
