@@ -56,8 +56,10 @@ def load_principal(url: str) -> float | None:
     try:
         df = pd.read_csv(url, header=None)
         for _, row in df.iterrows():
-            if len(row) >= 2 and "원금" in str(row[0]):
-                return _clean_number(str(row[1]))
+            # 어느 열에 "원금"이 있든 찾아서 그 다음 열 값을 반환
+            for i, val in enumerate(row):
+                if "원금" in str(val) and i + 1 < len(row):
+                    return _clean_number(str(row.iloc[i + 1]))
     except Exception:
         pass
     return None

@@ -55,20 +55,16 @@ def push_signals_to_sheet(
 
 
 def main() -> int:
-    tickers = list(ETF_UNIVERSE.keys())
+    universe_tickers = list(ETF_UNIVERSE.keys())
 
-    print(f"[1/4] {len(tickers)}개 ETF 가격 수집 중...")
-    closes = fetch_close_panel(tickers, lookback_days=400)
-    print(f"  - 수집 완료: {closes.shape[0]} 거래일 × {closes.shape[1]} 종목")
-
-    # 보유종목 로드 (Google Sheet CSV URL 우선, 없으면 env var 폴백)
+    # 보유종목 먼저 로드 (가격 수집에 포함시키기 위해)
     sheet_holdings = []
     principal = None
     holdings_url = os.environ.get("SHEET_HOLDINGS_URL", "")
     settings_url = os.environ.get("SHEET_SETTINGS_URL", "")
 
     if holdings_url:
-        print("[2/4] Google Sheet에서 보유종목 로드...")
+        print("[1/5] Google Sheet에서 보유종목 로드...")
         from .sheets import load_holdings, load_principal
         sheet_holdings = load_holdings(holdings_url)
         if settings_url:
@@ -78,13 +74,19 @@ def main() -> int:
             + (f", 총원금 {principal:,.0f}원" if principal else "")
         )
     else:
-        print("[2/4] 보유종목: 환경변수 HOLDINGS 사용")
+        print("[1/5] 보유종목: 환경변수 HOLDINGS 사용")
 
     holding_tickers = [h.ticker for h in sheet_holdings] or [
         t.strip() for t in os.environ.get("HOLDINGS", "").split(",") if t.strip()
     ]
 
-    print("[3/4] 듀얼 모멘텀 시그널 산출...")
+    # 유니버스 + 보유종목 모두 가격 수집
+    all_tickers = list(dict.fromkeys(universe_tickers + holding_tickers))
+    print(f"[2/5] {len(all_tickers)}개 ETF 가격 수집 중...")
+    closes = fetch_close_panel(all_tickers, lookback_days=400)
+    print(f"  - 수집 완료: {closes.shape[0]} 거래일 × {closes.shape[1]} 종목")
+
+    print("[3/5] 듀얼 모멘텀 시그널 산출...")
     signals = compute_signals(closes, ETF_UNIVERSE, current_holdings=holding_tickers)
     for s in signals:
         print(f"  {s.action:4s} {s.ticker} {s.name} 12M={s.momentum_12m * 100:+.2f}%")
