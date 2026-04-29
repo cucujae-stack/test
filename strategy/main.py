@@ -18,27 +18,77 @@ def _env(name: str, required: bool = True, default: str | None = None) -> str:
     return val or ""
 
 
+def _load_holdings_from_sheet(sheet_id: str):
+    from .sheets import load_holdings, load_principal
+    holdings = load_holdings(sheet_id)
+    principal = load_principal(sheet_id)
+    return holdings, principal
+
+
 def main() -> int:
-    holdings = [t.strip() for t in os.environ.get("HOLDINGS", "").split(",") if t.strip()]
     tickers = list(ETF_UNIVERSE.keys())
 
-    print(f"[1/3] {len(tickers)}개 ETF 가격 수집 중...")
+    print(f"[1/4] {len(tickers)}개 ETF 가격 수집 중...")
     closes = fetch_close_panel(tickers, lookback_days=400)
     print(f"  - 수집 완료: {closes.shape[0]} 거래일 × {closes.shape[1]} 종목")
 
-    print("[2/3] 듀얼 모멘텀 시그널 산출...")
-    signals = compute_signals(closes, ETF_UNIVERSE, current_holdings=holdings)
+    # 보유종목 로드 (Google Sheet 우선, 없으면 env var 폴백)
+    sheet_holdings = []
+    principal = None
+    sheet_id = os.environ.get("GOOGLE_SHEET_ID", "")
+    if sheet_id and os.environ.get("GOOGLE_CREDENTIALS", ""):
+        print("[2/4] Google Sheet에서 보유종목 로드...")
+        sheet_holdings, principal = _load_holdings_from_sheet(sheet_id)
+        print(f"  - 보유종목 {len(sheet_holdings)}개, 총원금 {principal:,.0f}원" if principal else f"  - 보유종목 {len(sheet_holdings)}개")
+    else:
+        print("[2/4] 보유종목: 환경변수 HOLDINGS 사용")
+
+    holding_tickers = [h.ticker for h in sheet_holdings] or [
+        t.strip() for t in os.environ.get("HOLDINGS", "").split(",") if t.strip()
+    ]
+
+    print("[3/4] 듀얼 모멘텀 시그널 산출...")
+    signals = compute_signals(closes, ETF_UNIVERSE, current_holdings=holding_tickers)
     for s in signals:
         print(f"  {s.action:4s} {s.ticker} {s.name} 12M={s.momentum_12m * 100:+.2f}%")
-
     if not signals:
-        print("  추천 종목 없음 — 모든 후보가 절대 모멘텀/추세 필터 탈락. 현금 유지 권장.")
+        print("  추천 종목 없음 — 현금 유지 권장")
 
-    print("[3/3] 메일 발송...")
+    print("[4/4] 메일 발송...")
     run_date = datetime.now().strftime("%Y-%m-%d")
-    html = render_html(signals, run_date=run_date, top_n=TOP_N)
 
-    # 스케줄 실행 시 DRY_RUN은 빈 문자열 → 메일 발송. "1"일 때만 생략.
+    # 보유종목 평가손익 계산
+    portfolio_rows = []
+    if sheet_holdings:
+        last_prices = closes.iloc[-1]
+        for h in sheet_holdings:
+            cur = float(last_prices.get(h.ticker, 0))
+            if cur == 0:
+                continue
+            eval_amt = cur * h.qty
+            buy_amt = h.buy_price * h.qty
+            pnl = eval_amt - buy_amt
+            pnl_pct = pnl / buy_amt * 100 if buy_amt else 0
+            portfolio_rows.append({
+                "ticker": h.ticker,
+                "name": h.name,
+                "buy_date": h.buy_date,
+                "buy_price": h.buy_price,
+                "qty": h.qty,
+                "cur_price": cur,
+                "eval_amt": eval_amt,
+                "pnl": pnl,
+                "pnl_pct": pnl_pct,
+            })
+
+    html = render_html(
+        signals,
+        run_date=run_date,
+        top_n=TOP_N,
+        portfolio_rows=portfolio_rows,
+        principal=principal,
+    )
+
     if os.environ.get("DRY_RUN", "0") == "1":
         print("  DRY_RUN=1 — 메일 발송 생략")
         print(html)
