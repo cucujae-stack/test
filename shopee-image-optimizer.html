@@ -20,15 +20,6 @@
   .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
   .card h2 { font-size: 13px; font-weight: 600; color: #6b7280; margin-bottom: 12px; }
 
-  /* 모드 버튼 */
-  .mode-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-  .mode-btn { flex: 1; min-width: 150px; padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; cursor: pointer; text-align: left; transition: all .15s; }
-  .mode-btn:hover { border-color: #fdba74; }
-  .mode-btn.active { border-color: #f97316; background: #fff7ed; color: #c2410c; }
-  .mode-btn .mode-title { font-size: 13px; font-weight: 600; }
-  .mode-btn .mode-desc { font-size: 11px; color: #9ca3af; margin-top: 2px; }
-  .mode-btn.active .mode-desc { color: #fb923c; }
-
   /* 목표 용량 */
   .target-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
   .target-btn { padding: 8px 16px; border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; font-weight: 500; color: #374151; transition: all .15s; }
@@ -84,7 +75,6 @@
 
   @media (max-width: 480px) {
     .preview-grid { grid-template-columns: 1fr; }
-    .mode-btn { min-width: 100%; }
   }
 </style>
 </head>
@@ -94,36 +84,18 @@
   <!-- 헤더 -->
   <div class="header">
     <h1>🛍 Shopee Image Optimizer</h1>
-    <p>쇼피 썸네일·SNS 이미지를 브라우저에서 바로 압축하세요</p>
+    <p>이미지를 브라우저에서 바로 압축하세요 · 원본 비율 유지</p>
   </div>
 
-  <!-- 모드 + 목표 용량 -->
+  <!-- 목표 용량 -->
   <div class="card">
-    <h2>압축 모드</h2>
-    <div class="mode-grid">
-      <button class="mode-btn active" data-mode="shopee">
-        <div class="mode-title">🛍 Shopee 모드</div>
-        <div class="mode-desc">1080×1080 · 흰 배경 · 70KB 이하</div>
-      </button>
-      <button class="mode-btn" data-mode="sns">
-        <div class="mode-title">📸 SNS 모드</div>
-        <div class="mode-desc">1080×1350 · 흰 배경 · 용량 선택 가능</div>
-      </button>
-      <button class="mode-btn" data-mode="basic">
-        <div class="mode-title">⚡ 기본 모드</div>
-        <div class="mode-desc">원본 비율 유지 · 용량 선택 가능</div>
-      </button>
-    </div>
-
-    <div id="targetSection" style="display:none;">
-      <h2>목표 용량</h2>
-      <div class="target-row">
-        <button class="target-btn active" data-kb="70">70 KB</button>
-        <button class="target-btn" data-kb="100">100 KB</button>
-        <button class="target-btn" data-kb="200">200 KB</button>
-        <button class="target-btn" data-kb="custom">직접 입력</button>
-        <input type="number" id="customKbInput" placeholder="KB" style="display:none;" min="10" max="10000" />
-      </div>
+    <h2>목표 용량</h2>
+    <div class="target-row">
+      <button class="target-btn active" data-kb="70">70 KB</button>
+      <button class="target-btn" data-kb="100">100 KB</button>
+      <button class="target-btn" data-kb="200">200 KB</button>
+      <button class="target-btn" data-kb="custom">직접 입력</button>
+      <input type="number" id="customKbInput" placeholder="KB" style="display:none;" min="10" max="10000" />
     </div>
   </div>
 
@@ -152,7 +124,7 @@
 // ───────────────────────────────────────────────────
 // 상태
 // ───────────────────────────────────────────────────
-let currentMode = 'shopee';
+const currentMode = 'basic';
 let targetKB = 70;
 let useCustomKB = false;
 const items = []; // { id, file, status, result, originalPreview, resultPreview, ... }
@@ -206,7 +178,7 @@ async function bestBlob(canvas, quality, hasTransparency) {
 }
 
 async function compressImage(file) {
-  const effectiveKB = currentMode === 'shopee' ? 70 : targetKB;
+  const effectiveKB = targetKB;
   const targetBytes = effectiveKB * 1024;
   const objectUrl = URL.createObjectURL(file);
 
@@ -214,16 +186,12 @@ async function compressImage(file) {
     const img = await loadImg(objectUrl);
     const hasTransparency = file.type === 'image/png';
 
-    // 캔버스 크기 결정
-    let cw, ch, useContain = false;
-    if (currentMode === 'shopee') { cw = 1080; ch = 1080; useContain = true; }
-    else if (currentMode === 'sns') { cw = 1080; ch = 1350; useContain = true; }
-    else {
-      const maxL = 1600, long = Math.max(img.width, img.height);
-      const s = long > maxL ? maxL / long : 1;
-      cw = Math.round(img.width * s);
-      ch = Math.round(img.height * s);
-    }
+    // 캔버스 크기 결정 (원본 비율 유지, 긴 변 최대 1600px)
+    const maxL = 1600, long = Math.max(img.width, img.height);
+    const s = long > maxL ? maxL / long : 1;
+    let cw = Math.round(img.width * s);
+    let ch = Math.round(img.height * s);
+    const useContain = false;
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -293,7 +261,7 @@ function renderItem(item) {
   }
 
   const r = item.result;
-  const effectiveKB = currentMode === 'shopee' ? 70 : targetKB;
+  const effectiveKB = targetKB;
   const sizeOk = r && r.blob.size <= effectiveKB * 1024;
 
   el.innerHTML = `
@@ -419,18 +387,8 @@ document.getElementById('btnClear').addEventListener('click', () => {
 });
 
 // ───────────────────────────────────────────────────
-// 모드 & 목표 용량 버튼
+// 목표 용량 버튼
 // ───────────────────────────────────────────────────
-document.querySelectorAll('.mode-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentMode = btn.dataset.mode;
-    document.getElementById('targetSection').style.display =
-      currentMode === 'shopee' ? 'none' : 'block';
-  });
-});
-
 document.querySelectorAll('.target-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.target-btn').forEach(b => b.classList.remove('active'));
