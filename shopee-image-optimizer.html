@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Shopee Image Optimizer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, Helvetica, sans-serif; background: #f9fafb; color: #111; min-height: 100vh; }
+
+  .container { max-width: 860px; margin: 0 auto; padding: 32px 16px; }
+
+  /* 헤더 */
+  .header { text-align: center; margin-bottom: 28px; }
+  .header h1 { font-size: 26px; font-weight: 700; color: #f97316; margin-bottom: 4px; }
+  .header p { color: #6b7280; font-size: 13px; }
+
+  /* 카드 */
+  .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .card h2 { font-size: 13px; font-weight: 600; color: #6b7280; margin-bottom: 12px; }
+
+  /* 모드 버튼 */
+  .mode-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .mode-btn { flex: 1; min-width: 150px; padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; cursor: pointer; text-align: left; transition: all .15s; }
+  .mode-btn:hover { border-color: #fdba74; }
+  .mode-btn.active { border-color: #f97316; background: #fff7ed; color: #c2410c; }
+  .mode-btn .mode-title { font-size: 13px; font-weight: 600; }
+  .mode-btn .mode-desc { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+  .mode-btn.active .mode-desc { color: #fb923c; }
+
+  /* 목표 용량 */
+  .target-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .target-btn { padding: 8px 16px; border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; font-weight: 500; color: #374151; transition: all .15s; }
+  .target-btn:hover { border-color: #fdba74; }
+  .target-btn.active { border-color: #f97316; background: #fff7ed; color: #c2410c; }
+  #customKbInput { width: 72px; padding: 8px 8px; border: 1px solid #fbd38d; border-radius: 8px; font-size: 13px; text-align: center; outline: none; }
+  #customKbInput:focus { border-color: #f97316; box-shadow: 0 0 0 2px #fed7aa55; }
+
+  /* 업로드 영역 */
+  .drop-zone { border: 2px dashed #d1d5db; border-radius: 12px; padding: 48px 20px; text-align: center; cursor: pointer; transition: all .15s; background: #fff; margin-bottom: 16px; }
+  .drop-zone:hover, .drop-zone.drag-over { border-color: #f97316; background: #fff7ed; }
+  .drop-zone .icon { font-size: 44px; margin-bottom: 10px; }
+  .drop-zone .main-text { font-size: 15px; font-weight: 500; color: #374151; margin-bottom: 4px; }
+  .drop-zone .sub-text { font-size: 12px; color: #9ca3af; }
+
+  /* 일괄 버튼 */
+  .bulk-bar { display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 12px; }
+  .btn-orange { padding: 8px 16px; background: #f97316; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background .15s; }
+  .btn-orange:hover { background: #ea6c0b; }
+  .btn-orange:disabled { background: #fed7aa; cursor: default; }
+  .btn-gray { padding: 8px 16px; background: #f3f4f6; color: #6b7280; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background .15s; }
+  .btn-gray:hover { background: #e5e7eb; }
+
+  /* 결과 카드 */
+  .result-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px; }
+  .result-filename { font-size: 13px; font-weight: 500; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 55%; }
+  .result-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .badge { font-size: 11px; padding: 3px 8px; border-radius: 99px; font-weight: 500; }
+  .badge-green { background: #d1fae5; color: #065f46; }
+  .badge-red { background: #fee2e2; color: #991b1b; }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+  .btn-dl { padding: 6px 12px; background: #f97316; color: #fff; border: none; border-radius: 7px; font-size: 12px; font-weight: 500; cursor: pointer; }
+  .btn-dl:hover { background: #ea6c0b; }
+
+  .preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .preview-box label { font-size: 11px; color: #9ca3af; font-weight: 600; display: block; margin-bottom: 6px; }
+  .preview-img-wrap { background: #f3f4f6; border-radius: 8px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .preview-img-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .meta { margin-top: 8px; font-size: 11px; color: #6b7280; line-height: 1.7; }
+  .meta span { font-weight: 600; color: #111; }
+  .meta .green { color: #059669; }
+  .meta .red { color: #dc2626; }
+  .meta .blue { color: #2563eb; }
+
+  /* 처리중 */
+  .processing-row { display: flex; align-items: center; gap: 10px; color: #f97316; font-size: 13px; font-weight: 500; padding: 6px 0; }
+  .spinner { width: 18px; height: 18px; border: 2px solid #fed7aa; border-top-color: #f97316; border-radius: 50%; animation: spin .7s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 푸터 */
+  .footer { text-align: center; font-size: 11px; color: #9ca3af; margin-top: 36px; }
+
+  @media (max-width: 480px) {
+    .preview-grid { grid-template-columns: 1fr; }
+    .mode-btn { min-width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- 헤더 -->
+  <div class="header">
+    <h1>🛍 Shopee Image Optimizer</h1>
+    <p>쇼피 썸네일·SNS 이미지를 브라우저에서 바로 압축하세요</p>
+  </div>
+
+  <!-- 모드 + 목표 용량 -->
+  <div class="card">
+    <h2>압축 모드</h2>
+    <div class="mode-grid">
+      <button class="mode-btn active" data-mode="shopee">
+        <div class="mode-title">🛍 Shopee 모드</div>
+        <div class="mode-desc">1080×1080 · 흰 배경 · 70KB 이하</div>
+      </button>
+      <button class="mode-btn" data-mode="sns">
+        <div class="mode-title">📸 SNS 모드</div>
+        <div class="mode-desc">1080×1350 · 흰 배경 · 용량 선택 가능</div>
+      </button>
+      <button class="mode-btn" data-mode="basic">
+        <div class="mode-title">⚡ 기본 모드</div>
+        <div class="mode-desc">원본 비율 유지 · 용량 선택 가능</div>
+      </button>
+    </div>
+
+    <div id="targetSection" style="display:none;">
+      <h2>목표 용량</h2>
+      <div class="target-row">
+        <button class="target-btn active" data-kb="70">70 KB</button>
+        <button class="target-btn" data-kb="100">100 KB</button>
+        <button class="target-btn" data-kb="200">200 KB</button>
+        <button class="target-btn" data-kb="custom">직접 입력</button>
+        <input type="number" id="customKbInput" placeholder="KB" style="display:none;" min="10" max="10000" />
+      </div>
+    </div>
+  </div>
+
+  <!-- 업로드 영역 -->
+  <div class="drop-zone" id="dropZone">
+    <div class="icon">🖼️</div>
+    <div class="main-text">이미지를 붙여넣거나 드래그하세요</div>
+    <div class="sub-text">또는 클릭하여 파일 선택 · JPG, PNG, WEBP · 여러 장 가능</div>
+    <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" multiple style="display:none;" />
+  </div>
+
+  <!-- 일괄 버튼 -->
+  <div class="bulk-bar" id="bulkBar" style="display:none;">
+    <button class="btn-orange" id="btnDownloadAll">전체 다운로드 ZIP</button>
+    <button class="btn-gray" id="btnClear">전체 초기화</button>
+  </div>
+
+  <!-- 결과 목록 -->
+  <div id="resultList"></div>
+
+  <!-- 푸터 -->
+  <div class="footer">🔒 이미지는 브라우저에서만 처리되며 서버에 업로드되지 않습니다.</div>
+</div>
+
+<script>
+// ───────────────────────────────────────────────────
+// 상태
+// ───────────────────────────────────────────────────
+let currentMode = 'shopee';
+let targetKB = 70;
+let useCustomKB = false;
+const items = []; // { id, file, status, result, originalPreview, resultPreview, ... }
+
+// ───────────────────────────────────────────────────
+// 유틸
+// ───────────────────────────────────────────────────
+function fmtBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+  return (b / (1024 * 1024)).toFixed(2) + ' MB';
+}
+function fmtRatio(orig, comp) {
+  return ((1 - comp / orig) * 100).toFixed(1) + '%';
+}
+function uid() {
+  return Math.random().toString(36).slice(2);
+}
+function getImageDimensions(src) {
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => res({ w: img.width, h: img.height });
+    img.src = src;
+  });
+}
+
+// ───────────────────────────────────────────────────
+// 압축 핵심 로직
+// ───────────────────────────────────────────────────
+function loadImg(src) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = rej;
+    img.src = src;
+  });
+}
+function canvasToBlob(canvas, fmt, q) {
+  return new Promise((res, rej) =>
+    canvas.toBlob(b => b ? res(b) : rej(new Error('toBlob 실패')), fmt, q)
+  );
+}
+async function bestBlob(canvas, quality, hasTransparency) {
+  const jpegBlob = await canvasToBlob(canvas, 'image/jpeg', quality);
+  const webpBlob = await canvasToBlob(canvas, 'image/webp', quality);
+  if (hasTransparency && webpBlob.size <= jpegBlob.size * 1.2)
+    return { blob: webpBlob, fmt: 'WEBP' };
+  return webpBlob.size < jpegBlob.size
+    ? { blob: webpBlob, fmt: 'WEBP' }
+    : { blob: jpegBlob, fmt: 'JPG' };
+}
+
+async function compressImage(file) {
+  const effectiveKB = currentMode === 'shopee' ? 70 : targetKB;
+  const targetBytes = effectiveKB * 1024;
+  const objectUrl = URL.createObjectURL(file);
+
+  try {
+    const img = await loadImg(objectUrl);
+    const hasTransparency = file.type === 'image/png';
+
+    // 캔버스 크기 결정
+    let cw, ch, useContain = false;
+    if (currentMode === 'shopee') { cw = 1080; ch = 1080; useContain = true; }
+    else if (currentMode === 'sns') { cw = 1080; ch = 1350; useContain = true; }
+    else {
+      const maxL = 1600, long = Math.max(img.width, img.height);
+      const s = long > maxL ? maxL / long : 1;
+      cw = Math.round(img.width * s);
+      ch = Math.round(img.height * s);
+    }
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    let scale = 1.0;
+
+    while (true) {
+      const curW = Math.round(cw * scale);
+      const curH = Math.round(ch * scale);
+      canvas.width = curW;
+      canvas.height = curH;
+
+      if (useContain) {
+        // 흰 배경 + contain 방식으로 그리기
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, curW, curH);
+        const s2 = Math.min(curW / img.width, curH / img.height);
+        const dw = img.width * s2, dh = img.height * s2;
+        ctx.drawImage(img, (curW - dw) / 2, (curH - dh) / 2, dw, dh);
+      } else {
+        ctx.clearRect(0, 0, curW, curH);
+        ctx.drawImage(img, 0, 0, curW, curH);
+      }
+
+      // 품질 0.9 → 0.35, 0.05 단계 감소
+      let quality = 0.9;
+      while (quality >= 0.35) {
+        const { blob, fmt } = await bestBlob(canvas, quality, hasTransparency);
+        if (blob.size <= targetBytes)
+          return { blob, fmt, w: curW, h: curH, success: true };
+        quality = Math.round((quality - 0.05) * 100) / 100;
+      }
+
+      // 해상도 90% 축소 반복 (최소 긴 변 300px)
+      if (Math.max(curW, curH) * 0.9 < 300) break;
+      scale *= 0.9;
+    }
+
+    // 최종 실패
+    const { blob, fmt } = await bestBlob(canvas, 0.35, hasTransparency);
+    return { blob, fmt, w: canvas.width, h: canvas.height, success: false,
+      error: '목표 용량 달성 실패, 더 낮은 해상도로 재시도하세요' };
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+// ───────────────────────────────────────────────────
+// UI 렌더링
+// ───────────────────────────────────────────────────
+function renderItem(item) {
+  let el = document.getElementById('item-' + item.id);
+
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'result-card';
+    el.id = 'item-' + item.id;
+    document.getElementById('resultList').prepend(el);
+  }
+
+  if (item.status === 'processing') {
+    el.innerHTML = `
+      <div class="processing-row">
+        <div class="spinner"></div>
+        <span>${item.file.name} 압축 중...</span>
+      </div>`;
+    return;
+  }
+
+  const r = item.result;
+  const effectiveKB = currentMode === 'shopee' ? 70 : targetKB;
+  const sizeOk = r && r.blob.size <= effectiveKB * 1024;
+
+  el.innerHTML = `
+    <div class="result-header">
+      <div class="result-filename" title="${item.file.name}">${item.file.name}</div>
+      <div class="result-actions">
+        ${item.status === 'done'
+          ? `<span class="badge badge-green">완료</span>`
+          : `<span class="badge badge-red">실패</span>`}
+        ${r ? `<button class="btn-dl" onclick="dlSingle('${item.id}')">다운로드</button>` : ''}
+      </div>
+    </div>
+    <div class="preview-grid">
+      <div class="preview-box">
+        <label>원본</label>
+        <div class="preview-img-wrap">
+          <img src="${item.originalPreview}" alt="원본" />
+        </div>
+        <div class="meta">
+          용량: <span>${fmtBytes(item.file.size)}</span><br/>
+          해상도: <span>${item.origW}×${item.origH}</span>
+        </div>
+      </div>
+      <div class="preview-box">
+        <label>압축 후</label>
+        <div class="preview-img-wrap">
+          ${item.resultPreview
+            ? `<img src="${item.resultPreview}" alt="결과" />`
+            : `<span style="color:#9ca3af;font-size:12px;">없음</span>`}
+        </div>
+        ${r ? `<div class="meta">
+          용량: <span class="${sizeOk ? 'green' : 'red'}">${fmtBytes(r.blob.size)}</span><br/>
+          해상도: <span>${r.w}×${r.h}</span><br/>
+          압축률: <span class="blue">${fmtRatio(item.file.size, r.blob.size)} 감소</span><br/>
+          포맷: <span>${r.fmt}</span>
+        </div>` : `<div class="meta" style="color:#dc2626;">${item.error || ''}</div>`}
+      </div>
+    </div>`;
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulkBar');
+  bar.style.display = items.length ? 'flex' : 'none';
+  const doneCount = items.filter(i => i.status === 'done').length;
+  document.getElementById('btnDownloadAll').textContent =
+    `전체 다운로드 ZIP (${doneCount}장)`;
+  document.getElementById('btnDownloadAll').disabled = doneCount === 0;
+}
+
+// ───────────────────────────────────────────────────
+// 파일 처리
+// ───────────────────────────────────────────────────
+const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
+
+async function processFiles(files) {
+  const valid = Array.from(files).filter(f => ACCEPTED.includes(f.type));
+  if (!valid.length) return;
+
+  for (const file of valid) {
+    const id = uid();
+    const originalPreview = URL.createObjectURL(file);
+    const { w: origW, h: origH } = await getImageDimensions(originalPreview);
+
+    const item = { id, file, status: 'processing', originalPreview, origW, origH };
+    items.push(item);
+    renderItem(item);
+    updateBulkBar();
+
+    try {
+      const result = await compressImage(file);
+      item.result = result;
+      item.resultPreview = URL.createObjectURL(result.blob);
+      item.status = result.success ? 'done' : 'error';
+      item.error = result.error;
+    } catch (e) {
+      item.status = 'error';
+      item.error = String(e);
+    }
+
+    renderItem(item);
+    updateBulkBar();
+  }
+}
+
+// ───────────────────────────────────────────────────
+// 다운로드
+// ───────────────────────────────────────────────────
+function dlSingle(id) {
+  const item = items.find(i => i.id === id);
+  if (!item || !item.result) return;
+  const ext = item.result.fmt === 'WEBP' ? 'webp' : 'jpg';
+  const base = item.file.name.replace(/\.[^.]+$/, '');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(item.result.blob);
+  a.download = base + '_optimized.' + ext;
+  a.click();
+}
+
+document.getElementById('btnDownloadAll').addEventListener('click', async () => {
+  const done = items.filter(i => i.status === 'done' && i.result);
+  if (!done.length) return;
+  const zip = new JSZip();
+  done.forEach(item => {
+    const ext = item.result.fmt === 'WEBP' ? 'webp' : 'jpg';
+    const base = item.file.name.replace(/\.[^.]+$/, '');
+    zip.file(base + '_optimized.' + ext, item.result.blob);
+  });
+  const content = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(content);
+  a.download = 'optimized-images.zip';
+  a.click();
+});
+
+document.getElementById('btnClear').addEventListener('click', () => {
+  items.forEach(i => {
+    URL.revokeObjectURL(i.originalPreview);
+    if (i.resultPreview) URL.revokeObjectURL(i.resultPreview);
+  });
+  items.length = 0;
+  document.getElementById('resultList').innerHTML = '';
+  updateBulkBar();
+});
+
+// ───────────────────────────────────────────────────
+// 모드 & 목표 용량 버튼
+// ───────────────────────────────────────────────────
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMode = btn.dataset.mode;
+    document.getElementById('targetSection').style.display =
+      currentMode === 'shopee' ? 'none' : 'block';
+  });
+});
+
+document.querySelectorAll('.target-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.target-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const customInput = document.getElementById('customKbInput');
+    if (btn.dataset.kb === 'custom') {
+      useCustomKB = true;
+      customInput.style.display = 'inline-block';
+      customInput.focus();
+    } else {
+      useCustomKB = false;
+      customInput.style.display = 'none';
+      targetKB = parseInt(btn.dataset.kb);
+    }
+  });
+});
+
+document.getElementById('customKbInput').addEventListener('input', e => {
+  targetKB = parseInt(e.target.value) || 70;
+});
+
+// ───────────────────────────────────────────────────
+// 드래그앤드롭 / 클릭 / 붙여넣기
+// ───────────────────────────────────────────────────
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => {
+  processFiles(e.target.files);
+  e.target.value = '';
+});
+
+dropZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropZone.classList.add('drag-over');
+});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  processFiles(e.dataTransfer.files);
+});
+
+window.addEventListener('paste', e => {
+  const files = Array.from(e.clipboardData.items)
+    .filter(i => i.kind === 'file')
+    .map(i => i.getAsFile())
+    .filter(Boolean);
+  if (files.length) processFiles(files);
+});
+</script>
+</body>
+</html>
