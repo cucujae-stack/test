@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="900" viewBox="0 0 2000 900"><defs>
+    <linearGradient id="g15485863" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#38452c"/>
+      <stop offset="1" stop-color="#171c14"/>
+    </linearGradient>
+    <filter id="b15485863"><feGaussianBlur stdDeviation="91"/></filter>
+    <filter id="grain15485863">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.04 0"/>
+      <feComposite operator="over" in2="SourceGraphic"/>
+    </filter>
+  </defs><rect width="2000" height="900" fill="url(#g15485863)"/><g filter="url(#b15485863)"><path d="M 1028.9 889.8 Q 1028.9 889.8 999.1 1026.7 Q 969.3 1163.6 832.4 1200.4 Q 695.5 1237.2 534.2 1224.8 Q 372.9 1212.5 366.7 1051.2 Q 360.6 889.8 388.5 750.3 Q 416.4 610.7 556.0 602.2 Q 695.5 593.6 790.0 647.2 Q 884.6 700.8 956.7 795.3 Z" fill="#38452c" opacity="0.7347098538535647"/><path d="M 556.0 381.0 Q 556.0 381.0 553.0 460.7 Q 549.9 540.3 515.7 640.4 Q 481.5 740.5 377.8 759.9 Q 274.0 779.4 178.1 746.2 Q 82.3 713.1 27.0 634.3 Q -28.3 555.5 -53.4 468.3 Q -78.5 381.0 -86.8 274.4 Q -95.1 167.9 20.5 155.0 Q 136.1 142.1 205.0 49.7 Q 274.0 -42.7 370.1 2.6 Q 466.3 48.0 502.8 137.9 Q 539.2 227.9 547.6 304.4 Z" fill="#a3ab7f" opacity="0.7489655937068165"/><path d="M 1873.1 782.0 Q 1873.1 782.0 1871.1 841.5 Q 1869.0 901.0 1809.8 911.5 Q 1750.6 921.9 1705.1 922.0 Q 1659.6 922.0 1588.6 920.1 Q 1517.5 918.2 1489.9 850.1 Q 1462.3 782.0 1522.5 737.5 Q 1582.6 693.0 1609.7 632.3 Q 1636.8 571.7 1697.8 594.2 Q 1758.8 616.7 1821.4 634.3 Q 1884.1 651.9 1878.6 717.0 Z" fill="#a3ab7f" opacity="0.7983190676080995"/><path d="M 1194.6 542.1 Q 1194.6 542.1 1141.5 611.0 Q 1088.5 679.9 1037.1 744.7 Q 985.8 809.6 893.5 826.0 Q 801.3 842.4 760.5 757.3 Q 719.8 672.3 648.6 607.2 Q 577.4 542.1 645.2 474.6 Q 713.1 407.1 759.3 331.1 Q 805.6 255.1 887.3 290.6 Q 969.1 326.1 1069.1 336.0 Q 1169.1 345.8 1181.8 444.0 Z" fill="#e6e2ce" opacity="0.9394380122190342"/></g><circle cx="670" cy="742" r="6.1" fill="#e6e2ce" opacity="0.85"/><circle cx="1891" cy="637" r="206" fill="none" stroke="#e6e2ce" stroke-width="1.5" opacity="0.7"/><circle cx="1680" cy="848" r="127" fill="none" stroke="#e6e2ce" stroke-width="2.5" opacity="0.7"/><rect width="2000" height="900" filter="url(#grain15485863)" fill="#171c14" opacity="0.35"/></svg>

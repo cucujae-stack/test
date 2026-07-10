@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+/* Class-based dark mode: the ThemeProvider toggles `.dark` on <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  /* ---- Museum palette ------------------------------------------------ */
+  --color-canvas: var(--canvas);
+  --color-ink: var(--ink);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+
+  /* ---- Typography ---------------------------------------------------- */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-cormorant), Georgia, "Times New Roman", serif;
+
+  /* ---- Motion -------------------------------------------------------- */
+  --ease-museum: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root {
+  --canvas: #f7f6f3;
+  --ink: #1a1a1a;
+  --accent: #8c6a4a;
+  --accent-soft: #b59a80;
+  --muted: #6f6a63;
+  --line: #e4e1da;
+  --surface: #ffffff;
+  --surface-raised: #fdfcfa;
+}
+
+.dark {
+  --canvas: #121110;
+  --ink: #ece9e4;
+  --accent: #b59a80;
+  --accent-soft: #8c6a4a;
+  --muted: #97918a;
+  --line: #26241f;
+  --surface: #1a1917;
+  --surface-raised: #201e1b;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: background-color 0.6s ease, color 0.6s ease;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--canvas);
+}
+
+/* Thin, unobtrusive scrollbars — the interface should recede. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+/* Museum wall texture: an almost imperceptible grain. */
+.wall-texture {
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    color-mix(in srgb, var(--ink) 3%, transparent) 1px,
+    transparent 0
+  );
+  background-size: 24px 24px;
+}
+
+/* Wide letterspaced small caps used for wayfinding labels. */
+.museum-label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Respect users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

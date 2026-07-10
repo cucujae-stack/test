@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800"><defs>
+    <linearGradient id="g221732" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#232a3d"/>
+      <stop offset="1" stop-color="#0e1016"/>
+    </linearGradient>
+    <filter id="b221732"><feGaussianBlur stdDeviation="55"/></filter>
+    <filter id="grain221732">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.04 0"/>
+      <feComposite operator="over" in2="SourceGraphic"/>
+    </filter>
+  </defs><rect width="1200" height="800" fill="url(#g221732)"/><g filter="url(#b221732)"><path d="M 1074.2 587.0 Q 1074.2 587.0 1036.7 721.3 Q 999.2 855.7 864.8 849.8 Q 730.4 843.9 619.8 826.0 Q 509.2 808.2 441.6 697.6 Q 374.0 587.0 419.6 454.4 Q 465.2 321.8 597.8 250.4 Q 730.4 179.1 818.2 295.3 Q 905.9 411.4 990.1 499.2 Z" fill="#8f9bb3" opacity="0.7113834779127501"/><path d="M 863.6 378.4 Q 863.6 378.4 757.5 459.3 Q 651.5 540.2 578.8 593.5 Q 506.0 646.7 387.3 677.3 Q 268.6 707.8 231.2 591.3 Q 193.8 474.9 213.9 385.7 Q 234.0 296.6 259.9 187.9 Q 285.9 79.1 402.3 58.8 Q 518.7 38.6 613.1 104.1 Q 707.6 169.6 785.6 274.0 Z" fill="#4a5878" opacity="0.6761166630662047"/><path d="M 355.6 580.9 Q 355.6 580.9 276.8 634.4 Q 198.0 688.0 162.5 751.8 Q 126.9 815.7 47.2 826.4 Q -32.6 837.1 -69.7 766.2 Q -106.7 695.2 -148.9 638.1 Q -191.0 580.9 -166.0 511.3 Q -141.1 441.6 -78.7 408.4 Q -16.2 375.1 60.1 346.1 Q 136.4 317.0 212.7 362.4 Q 289.0 407.8 322.3 494.3 Z" fill="#232a3d" opacity="0.5758475135429763"/><path d="M 442.1 29.1 Q 442.1 29.1 428.3 88.2 Q 414.6 147.4 355.4 149.1 Q 296.3 150.8 238.2 148.0 Q 180.2 145.1 181.2 87.1 Q 182.3 29.1 185.9 -24.3 Q 189.5 -77.7 242.9 -105.2 Q 296.3 -132.7 345.7 -101.2 Q 395.1 -69.7 418.6 -20.3 Z" fill="#232a3d" opacity="0.6375401865923778"/></g><line x1="0" y1="416" x2="1200" y2="523" stroke="#d8d3c8" stroke-width="1" opacity="0.5"/><line x1="0" y1="606" x2="1200" y2="554" stroke="#d8d3c8" stroke-width="1" opacity="0.5"/><line x1="0" y1="765" x2="1200" y2="713" stroke="#d8d3c8" stroke-width="1" opacity="0.5"/><rect width="1200" height="800" filter="url(#grain221732)" fill="#0e1016" opacity="0.35"/></svg>
