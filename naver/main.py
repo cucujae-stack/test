@@ -26,6 +26,10 @@ def main(argv: list[str] | None = None) -> int:
         "--sort", default="sim", choices=["sim", "asc", "dsc", "date"],
         help="상품 정렬 (sim=정확도/대표상품, asc=최저가, dsc=최고가, date=최신)",
     )
+    parser.add_argument(
+        "--category", metavar="대분류",
+        help="특정 대분류만 조회 (예: 패션의류, 패션잡화, 스포츠/레저, 출산/육아). 생략 시 전체",
+    )
     parser.add_argument("--csv", metavar="PATH", help="CSV 저장 경로")
     parser.add_argument("--html", metavar="PATH", help="HTML 대시보드 저장 경로")
     args = parser.parse_args(argv)
@@ -43,7 +47,11 @@ def main(argv: list[str] | None = None) -> int:
             products_per_keyword=args.products,
             lookback_days=args.days,
             sort=args.sort,
+            category=args.category,
         )
+    except ValueError as exc:
+        print(f"[입력 오류] {exc}", file=sys.stderr)
+        return 2
     except NaverAPIError as exc:
         print(f"[API 오류] {exc}", file=sys.stderr)
         return 1

@@ -87,15 +87,24 @@ def build_rankings(
     products_per_keyword: int = 5,
     lookback_days: int = 14,
     sort: str = "sim",
+    category: str | None = None,
 ) -> list[KeywordRank]:
     """전체 워치리스트에 대해 인기 키워드 랭킹 + 대표 상품을 만든다.
 
     top_keywords         : 카테고리별로 상위 몇 개 키워드를 남길지
     products_per_keyword : 키워드당 대표 상품 개수
     sort                 : 쇼핑 검색 정렬 (asc=최저가, sim=정확도)
+    category             : 대분류 이름 일부(예: '패션잡화')로 필터. None 이면 전체
     """
+    watchlist = WATCHLIST
+    if category:
+        watchlist = [w for w in WATCHLIST if category in w.name]
+        if not watchlist:
+            available = sorted({w.name.split(" · ")[0] for w in WATCHLIST})
+            raise ValueError(f"'{category}' 에 해당하는 카테고리 없음. 사용 가능: {available}")
+
     ranked: list[KeywordRank] = []
-    for watch in WATCHLIST:
+    for watch in watchlist:
         print(f"  [데이터랩] '{watch.name}' 인기도 조회 중...", file=sys.stderr, flush=True)
         scores = _recent_score(client, watch, lookback_days)
         top = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)[:top_keywords]
