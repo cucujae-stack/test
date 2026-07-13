@@ -81,12 +81,23 @@ class NaverClient:
                 resp = self._session.request(method, url, timeout=self.timeout, **kwargs)
                 if resp.status_code == 429:  # 레이트리밋
                     raise NaverAPIError("rate limited (429)")
+                if 400 <= resp.status_code < 500:
+                    # 재시도해도 같은 결과라 바로 실패 처리하되, 원인 파악용으로 응답 본문을 그대로 노출
+                    raise NaverAPIError(
+                        f"{resp.status_code} {resp.reason} — {resp.text[:500]}"
+                    )
                 resp.raise_for_status()
                 return resp.json()
-            except (requests.RequestException, NaverAPIError) as exc:
+            except NaverAPIError as exc:
+                if str(exc).startswith(("400", "401", "403", "404")):
+                    raise NaverAPIError(f"요청 실패: {method} {url} — {exc}") from exc
                 last_exc = exc
                 if attempt < self.max_retries - 1:
                     time.sleep(2 ** attempt)  # 1s, 2s, 4s ...
+            except requests.RequestException as exc:
+                last_exc = exc
+                if attempt < self.max_retries - 1:
+                    time.sleep(2 ** attempt)
         raise NaverAPIError(f"요청 실패: {method} {url} — {last_exc}")
 
     # -- 쇼핑 검색 -------------------------------------------------------
