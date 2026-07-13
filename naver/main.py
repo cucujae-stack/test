@@ -11,8 +11,8 @@ import argparse
 import sys
 
 from .client import NaverAPIError, NaverClient
-from .rankings import build_rankings
-from .report import print_console, write_csv, write_html
+from .rankings import build_rankings, build_rankings_multi
+from .report import print_console, write_csv, write_html, write_html_multi
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -22,8 +22,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--top", type=int, default=5, help="카테고리별 상위 키워드 수")
     parser.add_argument("--products", type=int, default=5, help="키워드당 대표 상품 수")
     parser.add_argument(
-        "--period", default="일간", choices=["일간", "주간", "월간"],
-        help="인기도 기준 기간 (일간/주간/월간, 기본 일간)",
+        "--period", default="일간", choices=["일간", "주간", "월간", "전체"],
+        help="인기도 기준 기간 (일간/주간/월간, 전체=한 HTML에 토글로 다 담기)",
     )
     parser.add_argument(
         "--days", type=int, default=None,
@@ -46,6 +46,31 @@ def main(argv: list[str] | None = None) -> int:
     except NaverAPIError as exc:
         print(f"[설정 오류] {exc}", file=sys.stderr)
         return 2
+
+    # --period 전체: 일간/주간/월간을 한 HTML에 토글로 담는다
+    if args.period == "전체":
+        try:
+            multi = build_rankings_multi(
+                client,
+                top_keywords=args.top,
+                products_per_keyword=args.products,
+                sort=args.sort,
+                category=args.category,
+            )
+        except ValueError as exc:
+            print(f"[입력 오류] {exc}", file=sys.stderr)
+            return 2
+        except NaverAPIError as exc:
+            print(f"[API 오류] {exc}", file=sys.stderr)
+            return 1
+
+        for p, rk in multi.items():
+            print_console(rk, period=p)
+        out = args.html or "rankings.html"
+        print(f"\nHTML 저장(일간/주간/월간 토글): {write_html_multi(multi, out)}")
+        if args.csv:  # CSV 는 일간 기준으로 저장
+            print(f"CSV 저장(일간 기준): {write_csv(multi.get('일간', []), args.csv)}")
+        return 0
 
     try:
         rankings = build_rankings(

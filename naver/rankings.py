@@ -115,12 +115,7 @@ def build_rankings(
     time_unit, default_days = PERIODS[period]
     days = lookback_days if lookback_days is not None else default_days
 
-    watchlist = WATCHLIST
-    if category:
-        watchlist = [w for w in WATCHLIST if category in w.name]
-        if not watchlist:
-            available = sorted({w.name.split(" · ")[0] for w in WATCHLIST})
-            raise ValueError(f"'{category}' 에 해당하는 카테고리 없음. 사용 가능: {available}")
+    watchlist = _filter_watchlist(category)
 
     ranked: list[KeywordRank] = []
     for watch in watchlist:
@@ -142,3 +137,73 @@ def build_rankings(
                 )
             )
     return ranked
+
+
+def _filter_watchlist(category: str | None) -> list[CategoryWatch]:
+    if not category:
+        return list(WATCHLIST)
+    watchlist = [w for w in WATCHLIST if category in w.name]
+    if not watchlist:
+        available = sorted({w.name.split(" · ")[0] for w in WATCHLIST})
+        raise ValueError(f"'{category}' 에 해당하는 카테고리 없음. 사용 가능: {available}")
+    return watchlist
+
+
+def build_rankings_multi(
+    client: NaverClient,
+    periods: list[str] | None = None,
+    *,
+    top_keywords: int = 5,
+    products_per_keyword: int = 5,
+    sort: str = "sim",
+    category: str | None = None,
+) -> dict[str, list[KeywordRank]]:
+    """여러 기간(일간/주간/월간)을 한 번에 계산해 {기간: 랭킹} 으로 돌려준다.
+
+    상품 검색은 기간과 무관하므로 키워드당 한 번만 조회(캐시)하고, 데이터랩
+    점수만 기간별로 계산해 호출 수를 아낀다.
+    """
+    periods = periods or list(PERIODS)
+    for p in periods:
+        if p not in PERIODS:
+            raise ValueError(f"period 는 {list(PERIODS)} 중 하나여야 함 (받음: {p})")
+
+    watchlist = _filter_watchlist(category)
+    result: dict[str, list[KeywordRank]] = {p: [] for p in periods}
+    product_cache: dict[str, list[Product]] = {}
+
+    for watch in watchlist:
+        # 1) 기간별 점수 + 상위 키워드 선정
+        tops_by_period: dict[str, list[tuple[str, float]]] = {}
+        needed: list[str] = []
+        for p in periods:
+            time_unit, default_days = PERIODS[p]
+            print(f"  [데이터랩·{p}] '{watch.name}' 인기도 조회 중...", file=sys.stderr, flush=True)
+            scores = _recent_score(client, watch, default_days, time_unit=time_unit)
+            top = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)[:top_keywords]
+            tops_by_period[p] = top
+            for kw, _ in top:
+                if kw not in needed:
+                    needed.append(kw)
+
+        # 2) 상위 키워드 상품을 한 번씩만 조회 (기간 공통)
+        for kw in needed:
+            if kw not in product_cache:
+                print(f"  [검색] '{kw}' 상품 조회 중...", file=sys.stderr, flush=True)
+                product_cache[kw] = client.search_products(
+                    kw, display=products_per_keyword, sort=sort
+                )
+
+        # 3) 기간별 랭킹 조립
+        for p in periods:
+            for i, (kw, score) in enumerate(tops_by_period[p], start=1):
+                result[p].append(
+                    KeywordRank(
+                        rank=i,
+                        category=watch.name,
+                        keyword=kw,
+                        score=round(score, 1),
+                        products=product_cache[kw],
+                    )
+                )
+    return result
