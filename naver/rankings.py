@@ -11,6 +11,7 @@
 """
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
@@ -73,9 +74,11 @@ def build_rankings(
     """
     ranked: list[KeywordRank] = []
     for watch in WATCHLIST:
+        print(f"  [데이터랩] '{watch.name}' 인기도 조회 중...", file=sys.stderr, flush=True)
         scores = _recent_score(client, watch, lookback_days)
         top = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)[:top_keywords]
         for i, (keyword, score) in enumerate(top, start=1):
+            print(f"  [검색] '{keyword}' 상품 조회 중...", file=sys.stderr, flush=True)
             products = client.search_products(
                 keyword, display=products_per_keyword, sort=sort
             )
