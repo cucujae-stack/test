@@ -181,11 +181,19 @@ def _tab_bar(tops: dict[str, list[str]]) -> list[str]:
     return bar
 
 
-def write_html(rankings: list[KeywordRank], path: str | Path, period: str = "") -> Path:
-    """대분류/중분류 탭 필터가 달린 카드형 대시보드 HTML (단일 기간)."""
+def write_html(rankings: list[KeywordRank], path: str | Path, period: str = "", note: str = "") -> Path:
+    """대분류/중분류 탭 필터가 달린 카드형 대시보드 HTML (단일 기간).
+
+    note 를 주면 제목 아래 노란 경고 배너로 표시 (예: 과거 조회 시 상품 시점 안내).
+    """
     path = _prepare(path)
     tops = _collect_tops(rankings)
     suffix = " · " + html.escape(period) if period else ""
+    banner = (
+        f"<div style='background:#3a2a0f;color:#ffd479;padding:8px 12px;"
+        f"border-radius:8px;font-size:13px;margin:8px 0'>⚠ {html.escape(note)}</div>"
+        if note else ""
+    )
 
     parts: list[str] = [
         "<!doctype html><meta charset='utf-8'>",
@@ -194,6 +202,7 @@ def write_html(rankings: list[KeywordRank], path: str | Path, period: str = "") 
         *_STYLE,
         f"<h1>네이버 쇼핑 인기 랭킹 (근사){suffix}</h1>",
         f"<div class='score'>{_now()} · 공식 OpenAPI 기반</div>",
+        banner,
         "<div class='filters'>",
         *_tab_bar(tops),
         "<div class='bar sub' id='subbar'></div>",

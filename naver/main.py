@@ -8,7 +8,9 @@
 from __future__ import annotations
 
 import argparse
+import calendar
 import sys
+from datetime import date
 
 from .client import NaverAPIError, NaverClient
 from .rankings import build_rankings, build_rankings_multi
@@ -37,9 +39,27 @@ def main(argv: list[str] | None = None) -> int:
         "--category", metavar="대분류",
         help="특정 대분류만 조회 (예: 패션의류, 패션잡화, 스포츠/레저, 출산/육아). 생략 시 전체",
     )
+    parser.add_argument(
+        "--month", metavar="YYYY-MM",
+        help="과거 특정 월의 인기도 조회 (예: 2025-10). 지정 시 --period/--days 무시하고 "
+             "월간 기준으로 그 달만 조회. 상품은 과거 시점 재현이 불가해 항상 현재 상품이 붙음",
+    )
     parser.add_argument("--csv", metavar="PATH", help="CSV 저장 경로")
     parser.add_argument("--html", metavar="PATH", help="HTML 대시보드 저장 경로")
     args = parser.parse_args(argv)
+
+    as_of = None
+    period_label = args.period
+    if args.month:
+        try:
+            year, mon = (int(x) for x in args.month.split("-"))
+            last_day = calendar.monthrange(year, mon)[1]
+            as_of = date(year, mon, last_day)
+        except (ValueError, IndexError):
+            print(f"[입력 오류] --month 는 YYYY-MM 형식이어야 함 (받음: {args.month})", file=sys.stderr)
+            return 2
+        args.period = "월간"
+        period_label = f"{year}년 {mon}월"
 
     try:
         client = NaverClient()
@@ -81,6 +101,7 @@ def main(argv: list[str] | None = None) -> int:
             lookback_days=args.days,
             sort=args.sort,
             category=args.category,
+            as_of=as_of,
         )
     except ValueError as exc:
         print(f"[입력 오류] {exc}", file=sys.stderr)
@@ -89,11 +110,17 @@ def main(argv: list[str] | None = None) -> int:
         print(f"[API 오류] {exc}", file=sys.stderr)
         return 1
 
-    print_console(rankings, period=args.period)
+    note = (
+        f"'{period_label}' 기준 인기도이지만, 상품은 그 시점 재현이 불가해 "
+        "현재 판매 중인 상품이 표시됩니다." if as_of else ""
+    )
+    if note:
+        print(f"\n※ {note}", file=sys.stderr)
+    print_console(rankings, period=period_label)
     if args.csv:
         print(f"\nCSV 저장: {write_csv(rankings, args.csv)}")
     if args.html:
-        print(f"HTML 저장: {write_html(rankings, args.html, period=args.period)}")
+        print(f"HTML 저장: {write_html(rankings, args.html, period=period_label, note=note)}")
     return 0
 
 
