@@ -23,8 +23,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--products", type=int, default=5, help="키워드당 대표 상품 수")
     parser.add_argument("--days", type=int, default=14, help="데이터랩 조회 기간(일)")
     parser.add_argument(
-        "--sort", default="asc", choices=["asc", "sim", "date"],
-        help="상품 정렬 (asc=최저가, sim=정확도, date=최신)",
+        "--sort", default="sim", choices=["sim", "asc", "dsc", "date"],
+        help="상품 정렬 (sim=정확도/대표상품, asc=최저가, dsc=최고가, date=최신)",
     )
     parser.add_argument("--csv", metavar="PATH", help="CSV 저장 경로")
     parser.add_argument("--html", metavar="PATH", help="HTML 대시보드 저장 경로")

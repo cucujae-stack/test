@@ -55,7 +55,7 @@ python -m naver.main --top 3 --products 8 --days 7
 | `--top` | 5 | 카테고리별 상위 키워드 수 |
 | `--products` | 5 | 키워드당 대표 상품 수 |
 | `--days` | 14 | 데이터랩 조회 기간(일) |
-| `--sort` | asc | 상품 정렬 (asc=최저가, sim=정확도, date=최신) |
+| `--sort` | sim | 상품 정렬 (sim=정확도/대표상품, asc=최저가, dsc=최고가, date=최신) |
 | `--csv` / `--html` | - | 결과 저장 경로 |
 
 ## 관심 키워드 바꾸기

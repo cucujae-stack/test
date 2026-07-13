@@ -86,7 +86,7 @@ def build_rankings(
     top_keywords: int = 5,
     products_per_keyword: int = 5,
     lookback_days: int = 14,
-    sort: str = "asc",
+    sort: str = "sim",
 ) -> list[KeywordRank]:
     """전체 워치리스트에 대해 인기 키워드 랭킹 + 대표 상품을 만든다.
 
