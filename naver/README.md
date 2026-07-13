@@ -69,3 +69,27 @@ HTML 대시보드는 상단 **대분류 → 중분류 탭**으로 원하는 부�
 
 `naver/config.py`의 `WATCHLIST`를 수정하세요. 카테고리와, 그 안에서 순위를
 다툴 후보 키워드를 넣으면 됩니다.
+
+## 매일 자동 업데이트 (GitHub Pages)
+
+`.github/workflows/naver-rankings.yml` 이 매일 대시보드를 만들어 GitHub
+Pages 로 배포합니다. URL 하나만 즐겨찾기 해두면 늘 최신입니다.
+
+**설정(최초 1회):**
+
+1. 레포 **Settings → Secrets and variables → Actions → New repository secret**
+   에서 두 개 등록:
+   | Secret | 값 |
+   |---|---|
+   | `NAVER_CLIENT_ID` | 발급받은 Client ID |
+   | `NAVER_CLIENT_SECRET` | 발급받은 Client Secret |
+2. **Settings → Pages → Build and deployment → Source** 를 **GitHub Actions**
+   로 설정.
+3. **Actions 탭 → "네이버 쇼핑 랭킹" → Run workflow** 로 한 번 수동 실행하면
+   `https://<계정>.github.io/<레포>/` 에 대시보드가 뜹니다.
+
+이후 매일 KST 09:00 에 자동 갱신됩니다.
+
+> ⚠️ GitHub 의 `schedule` 은 **기본 브랜치**에 있을 때만 자동 실행됩니다.
+> 워크플로우가 기본 브랜치에 병합되기 전에는 **수동 실행(Run workflow)** 으로만
+> 동작하고, 병합 후부터 매일 자동 실행됩니다.

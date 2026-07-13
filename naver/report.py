@@ -16,6 +16,14 @@ def _now() -> str:
     return datetime.now(KST).strftime("%Y-%m-%d %H:%M KST")
 
 
+def _prepare(path: str | Path) -> Path:
+    """저장 경로를 Path 로 만들고 상위 폴더가 없으면 생성."""
+    path = Path(path)
+    if path.parent and not path.parent.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+    return path
+
+
 def print_console(rankings: list[KeywordRank], period: str = "") -> None:
     """터미널에 보기 좋게 출력."""
     tag = f"[{period}] " if period else ""
@@ -34,7 +42,7 @@ def print_console(rankings: list[KeywordRank], period: str = "") -> None:
 
 def write_csv(rankings: list[KeywordRank], path: str | Path) -> Path:
     """행 = (카테고리, 키워드, 순위, 인기도, 상품명, 최저가, 판매처, 링크)."""
-    path = Path(path)
+    path = _prepare(path)
     with path.open("w", newline="", encoding="utf-8-sig") as f:
         writer = csv.writer(f)
         writer.writerow(
@@ -175,7 +183,7 @@ def _tab_bar(tops: dict[str, list[str]]) -> list[str]:
 
 def write_html(rankings: list[KeywordRank], path: str | Path, period: str = "") -> Path:
     """대분류/중분류 탭 필터가 달린 카드형 대시보드 HTML (단일 기간)."""
-    path = Path(path)
+    path = _prepare(path)
     tops = _collect_tops(rankings)
     suffix = " · " + html.escape(period) if period else ""
 
@@ -201,7 +209,7 @@ def write_html(rankings: list[KeywordRank], path: str | Path, period: str = "") 
 
 def write_html_multi(period_rankings: dict[str, list[KeywordRank]], path: str | Path) -> Path:
     """일간/주간/월간 토글 + 대분류/중분류 탭이 함께 있는 단일 대시보드 HTML."""
-    path = Path(path)
+    path = _prepare(path)
     periods = list(period_rankings)
     # 중분류 목록은 기간 공통(구조 동일) — 아무 기간에서나 수집
     any_rank = next((r for r in period_rankings.values() if r), [])
