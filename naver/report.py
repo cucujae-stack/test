@@ -16,9 +16,10 @@ def _now() -> str:
     return datetime.now(KST).strftime("%Y-%m-%d %H:%M KST")
 
 
-def print_console(rankings: list[KeywordRank]) -> None:
+def print_console(rankings: list[KeywordRank], period: str = "") -> None:
     """터미널에 보기 좋게 출력."""
-    print(f"\n네이버 쇼핑 실시간 인기 랭킹 (근사) — {_now()}\n" + "=" * 52)
+    tag = f"[{period}] " if period else ""
+    print(f"\n{tag}네이버 쇼핑 인기 랭킹 (근사) — {_now()}\n" + "=" * 52)
     current_cat = None
     for row in rankings:
         if row.category != current_cat:
@@ -56,7 +57,7 @@ def _split_cat(category: str) -> tuple[str, str]:
     return top, sub
 
 
-def write_html(rankings: list[KeywordRank], path: str | Path) -> Path:
+def write_html(rankings: list[KeywordRank], path: str | Path, period: str = "") -> Path:
     """대분류/중분류 탭 필터가 달린 카드형 대시보드 HTML."""
     path = Path(path)
 
@@ -96,7 +97,7 @@ def write_html(rankings: list[KeywordRank], path: str | Path) -> Path:
         ".mall{color:#8fa3c8;font-size:11px}",
         "a{color:inherit;text-decoration:none}",
         "</style>",
-        f"<h1>네이버 쇼핑 실시간 인기 랭킹 (근사)</h1>",
+        f"<h1>네이버 쇼핑 인기 랭킹 (근사){' · ' + html.escape(period) if period else ''}</h1>",
         f"<div class='score'>{_now()} · 공식 OpenAPI 기반</div>",
     ]
 

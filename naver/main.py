@@ -21,7 +21,14 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--top", type=int, default=5, help="카테고리별 상위 키워드 수")
     parser.add_argument("--products", type=int, default=5, help="키워드당 대표 상품 수")
-    parser.add_argument("--days", type=int, default=14, help="데이터랩 조회 기간(일)")
+    parser.add_argument(
+        "--period", default="일간", choices=["일간", "주간", "월간"],
+        help="인기도 기준 기간 (일간/주간/월간, 기본 일간)",
+    )
+    parser.add_argument(
+        "--days", type=int, default=None,
+        help="데이터랩 조회 범위(일). 생략 시 기간에 맞춰 자동(일간14/주간60/월간180)",
+    )
     parser.add_argument(
         "--sort", default="sim", choices=["sim", "asc", "dsc", "date"],
         help="상품 정렬 (sim=정확도/대표상품, asc=최저가, dsc=최고가, date=최신)",
@@ -45,6 +52,7 @@ def main(argv: list[str] | None = None) -> int:
             client,
             top_keywords=args.top,
             products_per_keyword=args.products,
+            period=args.period,
             lookback_days=args.days,
             sort=args.sort,
             category=args.category,
@@ -56,11 +64,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"[API 오류] {exc}", file=sys.stderr)
         return 1
 
-    print_console(rankings)
+    print_console(rankings, period=args.period)
     if args.csv:
         print(f"\nCSV 저장: {write_csv(rankings, args.csv)}")
     if args.html:
-        print(f"HTML 저장: {write_html(rankings, args.html)}")
+        print(f"HTML 저장: {write_html(rankings, args.html, period=args.period)}")
     return 0
 
 

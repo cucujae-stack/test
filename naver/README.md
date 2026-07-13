@@ -46,17 +46,24 @@ python -m naver.main
 # CSV + HTML 대시보드로 저장
 python -m naver.main --csv rankings.csv --html rankings.html
 
-# 카테고리별 상위 3개 키워드, 키워드당 상품 8개, 최근 7일 기준
-python -m naver.main --top 3 --products 8 --days 7
+# 주간 기준 인기도로, 패션잡화만 뽑기
+python -m naver.main --period 주간 --category 패션잡화 --html jabhwa.html
+
+# 카테고리별 상위 3개 키워드, 키워드당 상품 8개
+python -m naver.main --top 3 --products 8
 ```
 
 | 옵션 | 기본 | 설명 |
 |---|---|---|
+| `--period` | 일간 | 인기도 기준 기간 (일간/주간/월간) |
+| `--category` | (전체) | 특정 대분류만 조회 (예: 패션의류, 패션잡화, 스포츠/레저, 출산/육아) |
 | `--top` | 5 | 카테고리별 상위 키워드 수 |
 | `--products` | 5 | 키워드당 대표 상품 수 |
-| `--days` | 14 | 데이터랩 조회 기간(일) |
+| `--days` | 자동 | 데이터랩 조회 범위(일). 생략 시 기간별 자동(일간14/주간60/월간180) |
 | `--sort` | sim | 상품 정렬 (sim=정확도/대표상품, asc=최저가, dsc=최고가, date=최신) |
 | `--csv` / `--html` | - | 결과 저장 경로 |
+
+HTML 대시보드는 상단 **대분류 → 중분류 탭**으로 원하는 부분만 걸러 볼 수 있습니다.
 
 ## 관심 키워드 바꾸기
 
