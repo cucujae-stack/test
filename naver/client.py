@@ -42,6 +42,7 @@ class Product:
     category: str       # category1 > ... > category4
     link: str
     product_id: str
+    image: str          # 상품 썸네일 이미지 URL
 
 
 class NaverClient:
@@ -175,4 +176,5 @@ def _parse_product(item: dict[str, Any]) -> Product:
         category=category,
         link=item.get("link", ""),
         product_id=str(item.get("productId", "")),
+        image=item.get("image", ""),
     )
