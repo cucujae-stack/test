@@ -32,30 +32,52 @@ class KeywordRank:
     products: list[Product] = field(default_factory=list)
 
 
+# 데이터랩 키워드 API는 한 요청당 키워드 5개까지만 허용한다.
+DATALAB_MAX_KEYWORDS = 5
+
+
+def _last_ratios(resp: dict, keywords: list[str]) -> dict[str, float]:
+    """데이터랩 응답에서 각 키워드의 '마지막 구간 ratio' 를 뽑는다."""
+    scores: dict[str, float] = {}
+    for result in resp.get("results", []):
+        data = result.get("data", [])
+        scores[result.get("title", "")] = float(data[-1]["ratio"]) if data else 0.0
+    for kw in keywords:  # 응답에 빠진 키워드는 0
+        scores.setdefault(kw, 0.0)
+    return scores
+
+
 def _recent_score(client: NaverClient, watch: CategoryWatch, days: int) -> dict[str, float]:
     """카테고리 안 키워드들의 '최근 인기도'를 계산.
 
-    데이터랩에서 구간 데이터를 받아, 각 키워드의 마지막 구간 ratio 를 쓴다.
-    (데이터가 비어 있으면 0)
+    데이터랩은 한 요청에 키워드 5개까지만 받으므로, 5개를 넘으면 첫 키워드를
+    '앵커'로 매 배치에 함께 넣어 배치 간 인기도를 비교 가능하게 정규화한다.
+    (배치마다 ratio 는 그 배치 안에서의 상대값이라, 공통 앵커로 스케일을 맞춘다.)
+    마지막에 카테고리 내 최댓값을 100 으로 재정규화해 0~100 값으로 돌려준다.
     """
     end = datetime.now(KST).date()
-    start = end - timedelta(days=days)
-    resp = client.keyword_trend(
-        watch.category_code,
-        watch.keywords,
-        start.isoformat(),
-        end.isoformat(),
-        time_unit="date",
-    )
-    scores: dict[str, float] = {}
-    for result in resp.get("results", []):
-        title = result.get("title", "")
-        data = result.get("data", [])
-        scores[title] = float(data[-1]["ratio"]) if data else 0.0
-    # 데이터랩 응답에 빠진 키워드는 0 으로 채움
-    for kw in watch.keywords:
-        scores.setdefault(kw, 0.0)
-    return scores
+    start = (end - timedelta(days=days)).isoformat()
+    end = end.isoformat()
+    kws = watch.keywords
+
+    if len(kws) <= DATALAB_MAX_KEYWORDS:
+        resp = client.keyword_trend(watch.category_code, kws, start, end, time_unit="date")
+        return _last_ratios(resp, kws)
+
+    anchor = kws[0]
+    raw: dict[str, float] = {anchor: 1.0}  # 앵커 자기 자신 = 기준 1.0
+    for i in range(1, len(kws), DATALAB_MAX_KEYWORDS - 1):
+        batch = [anchor] + kws[i : i + (DATALAB_MAX_KEYWORDS - 1)]
+        ratios = _last_ratios(
+            client.keyword_trend(watch.category_code, batch, start, end, time_unit="date"),
+            batch,
+        )
+        anchor_r = ratios.get(anchor, 0.0) or 1.0  # 0 방어
+        for kw in batch:
+            if kw != anchor:
+                raw[kw] = ratios[kw] / anchor_r  # 앵커 대비 상대값
+    top = max(raw.values()) or 1.0
+    return {kw: v / top * 100.0 for kw, v in raw.items()}
 
 
 def build_rankings(
