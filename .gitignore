@@ -4,3 +4,8 @@ __pycache__/
 venv/
 .env
 .DS_Store
+
+# 생성 결과물 (네이버 랭킹 리포트)
+rankings.html
+rankings.csv
+rankings_sample.html
