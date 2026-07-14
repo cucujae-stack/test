@@ -12,8 +12,9 @@
 from __future__ import annotations
 
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from .client import NaverClient, Product
 from .config import WATCHLIST, CategoryWatch
@@ -56,9 +57,17 @@ PERIODS: dict[str, tuple[str, int]] = {
 
 
 def _recent_score(
-    client: NaverClient, watch: CategoryWatch, days: int, time_unit: str = "date"
+    client: NaverClient,
+    watch: CategoryWatch,
+    days: int,
+    time_unit: str = "date",
+    as_of: date | None = None,
 ) -> dict[str, float]:
-    """카테고리 안 키워드들의 '최근 인기도'를 계산.
+    """카테고리 안 키워드들의 인기도를 계산.
+
+    as_of 를 주면 '그 날짜 기준 마지막 구간'을 본다(과거 조회). 생략하면 오늘 기준.
+    데이터랩은 조회 범위 안에서 검색된 데이터만 주므로, 과거 조회 시 그 시점까지
+    데이터가 존재해야 값이 잡힌다(네이버 쇼핑 서비스 시작 이후 데이터만 가능).
 
     time_unit(date/week/month)에 따라 마지막 구간이 일간/주간/월간이 된다.
     데이터랩은 한 요청에 키워드 5개까지만 받으므로, 5개를 넘으면 첫 키워드를
@@ -66,9 +75,9 @@ def _recent_score(
     (배치마다 ratio 는 그 배치 안에서의 상대값이라, 공통 앵커로 스케일을 맞춘다.)
     마지막에 카테고리 내 최댓값을 100 으로 재정규화해 0~100 값으로 돌려준다.
     """
-    end = datetime.now(KST).date()
-    start = (end - timedelta(days=days)).isoformat()
-    end = end.isoformat()
+    end_date = as_of or datetime.now(KST).date()
+    start = (end_date - timedelta(days=days)).isoformat()
+    end = end_date.isoformat()
     kws = watch.keywords
 
     if len(kws) <= DATALAB_MAX_KEYWORDS:
@@ -100,6 +109,8 @@ def build_rankings(
     lookback_days: int | None = None,
     sort: str = "sim",
     category: str | None = None,
+    as_of: date | None = None,
+    max_workers: int = 6,
 ) -> list[KeywordRank]:
     """전체 워치리스트에 대해 인기 키워드 랭킹 + 대표 상품을 만든다.
 
@@ -109,6 +120,9 @@ def build_rankings(
     lookback_days        : 데이터랩 조회 범위(일). None 이면 period 기본값 사용
     sort                 : 쇼핑 검색 정렬 (asc=최저가, sim=정확도)
     category             : 대분류 이름 일부(예: '패션잡화')로 필터. None 이면 전체
+    as_of                : 이 날짜 기준으로 과거 인기도 조회. None 이면 오늘.
+                            상품은 과거 시점 재현이 불가해 항상 '현재' 상품이 붙는다.
+    max_workers          : 카테고리 병렬 조회 동시 수
     """
     if period not in PERIODS:
         raise ValueError(f"period 는 {list(PERIODS)} 중 하나여야 함 (받음: {period})")
@@ -117,25 +131,21 @@ def build_rankings(
 
     watchlist = _filter_watchlist(category)
 
-    ranked: list[KeywordRank] = []
-    for watch in watchlist:
+    def work(watch: CategoryWatch) -> list[KeywordRank]:
         print(f"  [데이터랩·{period}] '{watch.name}' 인기도 조회 중...", file=sys.stderr, flush=True)
-        scores = _recent_score(client, watch, days, time_unit=time_unit)
+        scores = _recent_score(client, watch, days, time_unit=time_unit, as_of=as_of)
         top = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)[:top_keywords]
+        rows: list[KeywordRank] = []
         for i, (keyword, score) in enumerate(top, start=1):
             print(f"  [검색] '{keyword}' 상품 조회 중...", file=sys.stderr, flush=True)
-            products = client.search_products(
-                keyword, display=products_per_keyword, sort=sort
-            )
-            ranked.append(
-                KeywordRank(
-                    rank=i,
-                    category=watch.name,
-                    keyword=keyword,
-                    score=round(score, 1),
-                    products=products,
-                )
-            )
+            products = client.search_products(keyword, display=products_per_keyword, sort=sort)
+            rows.append(KeywordRank(i, watch.name, keyword, round(score, 1), products))
+        return rows
+
+    ranked: list[KeywordRank] = []
+    with ThreadPoolExecutor(max_workers=max(1, max_workers)) as ex:
+        for chunk in ex.map(work, watchlist):  # map 은 입력 순서 보존
+            ranked.extend(chunk)
     return ranked
 
 
@@ -157,11 +167,12 @@ def build_rankings_multi(
     products_per_keyword: int = 5,
     sort: str = "sim",
     category: str | None = None,
+    max_workers: int = 6,
 ) -> dict[str, list[KeywordRank]]:
     """여러 기간(일간/주간/월간)을 한 번에 계산해 {기간: 랭킹} 으로 돌려준다.
 
     상품 검색은 기간과 무관하므로 키워드당 한 번만 조회(캐시)하고, 데이터랩
-    점수만 기간별로 계산해 호출 수를 아낀다.
+    점수만 기간별로 계산해 호출 수를 아낀다. 카테고리별 조회는 병렬 처리한다.
     """
     periods = periods or list(PERIODS)
     for p in periods:
@@ -169,10 +180,8 @@ def build_rankings_multi(
             raise ValueError(f"period 는 {list(PERIODS)} 중 하나여야 함 (받음: {p})")
 
     watchlist = _filter_watchlist(category)
-    result: dict[str, list[KeywordRank]] = {p: [] for p in periods}
-    product_cache: dict[str, list[Product]] = {}
 
-    for watch in watchlist:
+    def work(watch: CategoryWatch) -> dict[str, list[KeywordRank]]:
         # 1) 기간별 점수 + 상위 키워드 선정
         tops_by_period: dict[str, list[tuple[str, float]]] = {}
         needed: list[str] = []
@@ -186,24 +195,22 @@ def build_rankings_multi(
                 if kw not in needed:
                     needed.append(kw)
 
-        # 2) 상위 키워드 상품을 한 번씩만 조회 (기간 공통)
+        # 2) 상위 키워드 상품을 한 번씩만 조회 (기간 공통, 워치 내부 캐시)
+        cache: dict[str, list[Product]] = {}
         for kw in needed:
-            if kw not in product_cache:
-                print(f"  [검색] '{kw}' 상품 조회 중...", file=sys.stderr, flush=True)
-                product_cache[kw] = client.search_products(
-                    kw, display=products_per_keyword, sort=sort
-                )
+            print(f"  [검색] '{kw}' 상품 조회 중...", file=sys.stderr, flush=True)
+            cache[kw] = client.search_products(kw, display=products_per_keyword, sort=sort)
 
         # 3) 기간별 랭킹 조립
+        out: dict[str, list[KeywordRank]] = {p: [] for p in periods}
         for p in periods:
             for i, (kw, score) in enumerate(tops_by_period[p], start=1):
-                result[p].append(
-                    KeywordRank(
-                        rank=i,
-                        category=watch.name,
-                        keyword=kw,
-                        score=round(score, 1),
-                        products=product_cache[kw],
-                    )
-                )
+                out[p].append(KeywordRank(i, watch.name, kw, round(score, 1), cache[kw]))
+        return out
+
+    result: dict[str, list[KeywordRank]] = {p: [] for p in periods}
+    with ThreadPoolExecutor(max_workers=max(1, max_workers)) as ex:
+        for chunk in ex.map(work, watchlist):  # map 은 입력 순서 보존
+            for p in periods:
+                result[p].extend(chunk[p])
     return result
