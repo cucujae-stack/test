@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import date
 
@@ -82,19 +83,31 @@ def fetch_history(
     end: date,
     *,
     category: str | None = None,
+    max_workers: int = 6,
 ) -> list[HistoryPoint]:
-    """워치리스트 전체(또는 category 필터)의 일별 인기도 시계열."""
+    """워치리스트 전체(또는 category 필터)의 일별 인기도 시계열.
+
+    카테고리별 조회를 스레드풀로 병렬 처리한다(max_workers 동시). 네이버
+    레이트리밋(429)은 클라이언트가 백오프로 흡수한다. 출력 순서는 config 순서 유지.
+    """
     if start > end:
         raise ValueError(f"시작일({start})이 종료일({end})보다 늦음")
     s, e = start.isoformat(), end.isoformat()
+    watches = _filter_watchlist(category)
 
-    points: list[HistoryPoint] = []
-    for watch in _filter_watchlist(category):
+    def work(watch: CategoryWatch) -> list[HistoryPoint]:
         print(f"  [데이터랩·기간] '{watch.name}' {s}~{e} 조회 중...", file=sys.stderr, flush=True)
         series = _category_history(client, watch, s, e)
+        out: list[HistoryPoint] = []
         for kw in watch.keywords:  # config 순서 유지
             for day, ratio in sorted(series.get(kw, {}).items()):
-                points.append(HistoryPoint(day, watch.name, kw, round(ratio, 2)))
+                out.append(HistoryPoint(day, watch.name, kw, round(ratio, 2)))
+        return out
+
+    points: list[HistoryPoint] = []
+    with ThreadPoolExecutor(max_workers=max(1, max_workers)) as ex:
+        for chunk in ex.map(work, watches):  # map 은 입력 순서 보존
+            points.extend(chunk)
     return points
 
 

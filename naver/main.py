@@ -54,6 +54,10 @@ def main(argv: list[str] | None = None) -> int:
         "--to", dest="to_date", metavar="YYYY-MM-DD",
         help="시계열 조회 종료일 (기본: 오늘). --from 과 함께 사용",
     )
+    parser.add_argument(
+        "--workers", type=int, default=6,
+        help="카테고리 병렬 조회 동시 수 (기본 6). 너무 크면 레이트리밋(429) 유발 가능",
+    )
     parser.add_argument("--csv", metavar="PATH", help="CSV 저장 경로")
     parser.add_argument("--html", metavar="PATH", help="HTML 대시보드 저장 경로")
     args = parser.parse_args(argv)
@@ -68,7 +72,7 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         try:
             client = NaverClient()
-            points = fetch_history(client, start, end, category=args.category)
+            points = fetch_history(client, start, end, category=args.category, max_workers=args.workers)
         except NaverAPIError as exc:
             print(f"[API 오류] {exc}", file=sys.stderr)
             return 1
@@ -111,6 +115,7 @@ def main(argv: list[str] | None = None) -> int:
                 products_per_keyword=args.products,
                 sort=args.sort,
                 category=args.category,
+                max_workers=args.workers,
             )
         except ValueError as exc:
             print(f"[입력 오류] {exc}", file=sys.stderr)
@@ -137,6 +142,7 @@ def main(argv: list[str] | None = None) -> int:
             sort=args.sort,
             category=args.category,
             as_of=as_of,
+            max_workers=args.workers,
         )
     except ValueError as exc:
         print(f"[입력 오류] {exc}", file=sys.stderr)

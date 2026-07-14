@@ -72,6 +72,9 @@ class NaverClient:
                 "X-Naver-Client-Secret": self.client_secret,
             }
         )
+        # 병렬 호출 대비: 커넥션 풀을 넉넉히 (기본 10 → 32)
+        adapter = requests.adapters.HTTPAdapter(pool_connections=32, pool_maxsize=32)
+        self._session.mount("https://", adapter)
 
     # -- 내부 공통 요청 --------------------------------------------------
 
