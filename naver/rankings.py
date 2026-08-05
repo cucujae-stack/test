@@ -124,9 +124,13 @@ def build_rankings(
         top = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)[:top_keywords]
         for i, (keyword, score) in enumerate(top, start=1):
             print(f"  [검색] '{keyword}' 상품 조회 중...", file=sys.stderr, flush=True)
-            products = client.search_products(
-                keyword, display=products_per_keyword, sort=sort
-            )
+            try:
+                products = client.search_products(
+                    keyword, display=products_per_keyword, sort=sort
+                )
+            except Exception as exc:
+                print(f"  [검색 건너뜀] '{keyword}': {exc}", file=sys.stderr)
+                products = []
             ranked.append(
                 KeywordRank(
                     rank=i,
@@ -190,9 +194,13 @@ def build_rankings_multi(
         for kw in needed:
             if kw not in product_cache:
                 print(f"  [검색] '{kw}' 상품 조회 중...", file=sys.stderr, flush=True)
-                product_cache[kw] = client.search_products(
-                    kw, display=products_per_keyword, sort=sort
-                )
+                try:
+                    product_cache[kw] = client.search_products(
+                        kw, display=products_per_keyword, sort=sort
+                    )
+                except Exception as exc:
+                    print(f"  [검색 건너뜀] '{kw}': {exc}", file=sys.stderr)
+                    product_cache[kw] = []
 
         # 3) 기간별 랭킹 조립
         for p in periods:
