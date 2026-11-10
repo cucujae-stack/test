@@ -1,0 +1,1008 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- BEGIN PAGE -->
+<title>메트로 월드 패스</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: one-screen app. Top signage bar, schematic map canvas, platform-sign side panel (stacks under the map on phones). */
+:root {
+  --bg: #EEF1F4;         /* tunnel-tile grey, faint blue bias */
+  --paper: #FFFFFF;
+  --ink: #16202A;
+  --muted: #5A6776;
+  --rule: #D3DAE2;
+  --grid: #E2E7EC;
+  --sign-bg: #121A22;    /* platform sign */
+  --sign-fg: #F4F6F8;
+  --sign-muted: #9AA8B6;
+  --accent: #FFC20E;     /* wayfinding yellow */
+  --accent-ink: #16202A;
+  --good: #1F8A4C;
+  --bad: #C2372B;
+  --font-display: "Black Han Sans", "IBM Plex Sans KR", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1318; --paper: #151D25; --ink: #E6ECF1; --muted: #93A1AF; --rule: #2A3642; --grid: #18222B;
+    --sign-bg: #05090D; --sign-fg: #F4F6F8; --sign-muted: #8D9BA9; --accent: #FFC20E; --accent-ink: #16202A;
+    --good: #43B97A; --bad: #EF6A5E; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1318; --paper: #151D25; --ink: #E6ECF1; --muted: #93A1AF; --rule: #2A3642; --grid: #18222B;
+  --sign-bg: #05090D; --sign-fg: #F4F6F8; --sign-muted: #8D9BA9; --accent: #FFC20E; --accent-ink: #16202A;
+  --good: #43B97A; --bad: #EF6A5E; color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 14px; line-height: 1.5;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--sign-bg); }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- top bar ---------- */
+.topbar {
+  background: var(--sign-bg); color: var(--sign-fg);
+  padding-block: 10px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap; flex: none;
+}
+.brand { display: flex; align-items: center; gap: 10px; background: none; border: 0; padding: 0; color: inherit; }
+.brand-mark {
+  width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink);
+  display: grid; place-items: center; font-family: var(--font-display); font-size: 17px;
+}
+.brand-name { font-family: var(--font-display); font-size: 20px; letter-spacing: .02em; }
+.crumb { color: var(--sign-muted); font-size: 13px; }
+.crumb b { color: var(--sign-fg); font-weight: 700; }
+.spacer { flex: 1; }
+.stats { display: flex; gap: 16px; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 13px; }
+.stat span { color: var(--sign-muted); font-family: var(--font-body); font-size: 11px; letter-spacing: .06em; margin-right: 6px; }
+.tb-btn {
+  background: transparent; border: 1px solid #ffffff33; color: var(--sign-fg);
+  border-radius: 6px; padding: 5px 10px; font-size: 13px;
+}
+.tb-btn:hover { border-color: var(--accent); }
+
+/* ---------- home ---------- */
+#home { flex: 1; overflow-y: auto; }
+.home-inner {
+  max-width: 1120px; margin: 0 auto;
+  padding-block: 32px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 28px;
+}
+.hero { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 28px; align-items: end; }
+.hero h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(34px, 6vw, 60px); line-height: 1.05; margin: 0; text-wrap: balance; }
+.hero h1 em { font-style: normal; background: var(--accent); color: var(--accent-ink); padding: 0 .12em; }
+.hero p { margin: 12px 0 0; color: var(--muted); max-width: 52ch; font-size: 15px; }
+.howto { background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; display: grid; gap: 8px; }
+.howto h2 { margin: 0; font-size: 12px; letter-spacing: .1em; color: var(--muted); font-weight: 700; }
+.howto ol { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.cities { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 16px; }
+.city-card {
+  text-align: left; background: var(--paper); border: 1px solid var(--rule); border-radius: 10px;
+  padding: 0; overflow: hidden; display: grid; grid-template-rows: auto 1fr; transition: transform .15s, border-color .15s;
+}
+.city-card:hover { transform: translateY(-2px); border-color: var(--ink); }
+.city-sign { background: var(--sign-bg); color: var(--sign-fg); padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+.city-sign .flag { font-size: 26px; line-height: 1; }
+.city-sign .nm { font-family: var(--font-display); font-size: 24px; line-height: 1.1; }
+.city-sign .sub { color: var(--sign-muted); font-size: 12px; }
+.city-sign .yr { margin-left: auto; font-family: var(--font-mono); font-size: 12px; color: var(--accent); text-align: right; }
+.city-body { padding: 14px 16px 16px; display: grid; gap: 10px; align-content: start; }
+.line-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; padding: 2px 8px 2px 4px; border-radius: 999px; border: 1px solid var(--rule); background: var(--paper); }
+.chip i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.progress { height: 6px; background: var(--grid); border-radius: 3px; overflow: hidden; }
+.progress > div { height: 100%; background: var(--ink); }
+.prog-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.foot-note { color: var(--muted); font-size: 12px; }
+
+/* ---------- game ---------- */
+#game { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) 360px; min-height: 0; }
+.map-wrap { position: relative; min-height: 0; overflow: hidden; background: var(--bg);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 32px 32px; touch-action: none; cursor: grab; }
+.map-wrap.dragging { cursor: grabbing; }
+#map { width: 100%; height: 100%; display: block; user-select: none; -webkit-user-select: none; }
+.map-ctrl { position: absolute; right: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 6px; }
+.map-ctrl button {
+  width: 38px; height: 38px; border-radius: 8px; background: var(--paper); border: 1px solid var(--rule);
+  font-size: 18px; line-height: 1; display: grid; place-items: center;
+}
+.map-ctrl button:hover { border-color: var(--ink); }
+.legend { position: absolute; left: 12px; top: 12px; display: flex; flex-wrap: wrap; gap: 6px; max-width: calc(100% - 24px); pointer-events: none; }
+
+svg .edge { fill: none; stroke-linecap: round; stroke-width: 7; }
+svg .edge.dim { opacity: .28; }
+svg .route { fill: none; stroke: var(--accent); stroke-width: 15; stroke-linecap: round; stroke-linejoin: round; opacity: .55; }
+svg .st { cursor: pointer; }
+svg .st circle.dot { fill: var(--paper); stroke: var(--ink); stroke-width: 2.5; }
+svg .st.xfer circle.dot { stroke-width: 3.5; }
+svg .st.visited circle.dot { fill: var(--ink); }
+svg .st.adj circle.halo { fill: var(--accent); opacity: .55; }
+svg .st circle.halo { fill: transparent; }
+svg .st:hover circle.dot { stroke: var(--accent); }
+svg .st text { font-family: var(--font-body); font-size: 11.5px; fill: var(--ink); paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; font-weight: 500; }
+svg .st.visited text { font-weight: 700; }
+svg .st.adj text { font-weight: 700; }
+svg .target-ring { fill: none; stroke: var(--bad); stroke-width: 3; stroke-dasharray: 4 3; }
+svg .target-flag { fill: var(--bad); }
+svg .me-ring { fill: var(--accent); stroke: var(--sign-bg); stroke-width: 2.5; }
+svg .me-glyph { fill: var(--accent-ink); font-family: var(--font-display); font-size: 12px; }
+svg .pulse { fill: none; stroke: var(--accent); stroke-width: 3; transform-box: fill-box; transform-origin: center; animation: pulse 1.6s ease-out infinite; }
+@keyframes pulse { from { transform: scale(.6); opacity: .9; } to { transform: scale(2.1); opacity: 0; } }
+
+.panel { background: var(--paper); border-left: 1px solid var(--rule); overflow-y: auto; min-height: 0; display: flex; flex-direction: column; }
+.sign { background: var(--sign-bg); color: var(--sign-fg); padding: 16px 18px 18px; display: grid; gap: 8px; }
+.sign .eyebrow { font-size: 11px; letter-spacing: .12em; color: var(--sign-muted); }
+.sign .here { font-family: var(--font-display); font-size: 32px; line-height: 1.1; word-break: keep-all; overflow-wrap: anywhere; }
+.sign .chip { background: transparent; color: var(--sign-fg); border-color: #ffffff30; }
+.sign .clock { font-family: var(--font-mono); font-size: 12px; color: var(--sign-muted); font-variant-numeric: tabular-nums; }
+.section { padding: 14px 18px; border-bottom: 1px solid var(--rule); display: grid; gap: 10px; }
+.section h3 { margin: 0; font-size: 11px; letter-spacing: .12em; color: var(--muted); font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+.next-list { display: grid; gap: 6px; }
+.next-btn {
+  display: grid; grid-template-columns: 6px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  text-align: left; background: var(--bg); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px 8px 0; overflow: hidden;
+}
+.next-btn:hover { border-color: var(--ink); }
+.next-btn .bar { align-self: stretch; }
+.next-btn .nm { font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+.next-btn .ln { font-size: 12px; color: var(--muted); }
+.next-btn .cost { font-family: var(--font-mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+.next-btn .cost.xf { color: var(--bad); }
+.next-btn .new { font-size: 10px; font-weight: 700; background: var(--accent); color: var(--accent-ink); padding: 1px 5px; border-radius: 3px; margin-left: 6px; vertical-align: 1px; }
+
+.mission { border: 2px solid var(--ink); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; }
+.mission .to { font-family: var(--font-display); font-size: 22px; line-height: 1.15; overflow-wrap: anywhere; }
+.mission .meta { display: flex; gap: 14px; flex-wrap: wrap; font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.mission .meta b { color: var(--ink); }
+.mission.late { border-color: var(--bad); }
+.mission .state { font-size: 12px; font-weight: 700; }
+.timebar { height: 8px; border-radius: 4px; background: var(--grid); overflow: hidden; }
+.timebar > div { height: 100%; background: var(--good); transition: width .3s; }
+.mission.late .timebar > div { background: var(--bad); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { border: 1px solid var(--rule); background: var(--paper); border-radius: 7px; padding: 6px 12px; font-size: 13px; font-weight: 500; }
+.btn:hover { border-color: var(--ink); }
+.btn.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.info-name { font-weight: 700; font-size: 16px; }
+.fact { background: var(--bg); border-radius: 8px; padding: 10px 12px; font-size: 13px; }
+.fact b { display: block; font-size: 11px; letter-spacing: .1em; color: var(--muted); margin-bottom: 2px; }
+.lines-prog { display: grid; gap: 8px; }
+.lp { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 12px; }
+.lp .progress > div { background: var(--c); }
+.lp .n { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); }
+.log { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 12.5px; color: var(--muted); }
+.log li b { color: var(--ink); }
+.log .pts { font-family: var(--font-mono); color: var(--good); }
+
+/* toast + modal */
+#toasts { position: fixed; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 64px); display: grid; gap: 8px; z-index: 30; pointer-events: none; width: min(92vw, 420px); }
+.toast { background: var(--sign-bg); color: var(--sign-fg); border-left: 5px solid var(--accent); padding: 10px 14px; border-radius: 6px; box-shadow: 0 8px 24px #0004; font-size: 13.5px; animation: tin .25s ease-out; }
+.toast.big { border-left-color: var(--good); }
+.toast b { color: var(--accent); }
+@keyframes tin { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+.modal-bg { position: fixed; inset: 0; background: #0009; z-index: 40; display: grid; place-items: center; padding: 16px; }
+.modal { background: var(--paper); color: var(--ink); border-radius: 12px; width: min(720px, 100%); max-height: min(86vh, 900px); overflow-y: auto; }
+.modal .sign { border-radius: 12px 12px 0 0; display: flex; align-items: center; gap: 12px; }
+.modal .sign .here { font-size: 26px; }
+.modal .sign .tb-btn { margin-left: auto; }
+.modal-body { padding: 18px; display: grid; gap: 18px; }
+.stamp-city h4 { margin: 0 0 8px; font-size: 14px; display: flex; gap: 8px; align-items: baseline; }
+.stamp-city h4 span { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-weight: 500; }
+.stamps { display: flex; flex-wrap: wrap; gap: 6px; }
+.stamp { font-size: 11.5px; border: 1.5px solid var(--c); color: var(--ink); border-radius: 4px; padding: 1px 6px; transform: rotate(var(--r)); background: var(--bg); }
+.stamp.none { border-style: dashed; border-color: var(--rule); color: var(--muted); }
+.badges { display: flex; flex-wrap: wrap; gap: 8px; }
+.badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 4px 10px 4px 4px; border-radius: 999px; background: var(--bg); }
+.badge i { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-style: normal; font-size: 10px; }
+
+@media (max-width: 860px) {
+  #game { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 52%) minmax(0, 48%); }
+  .panel { border-left: 0; border-top: 1px solid var(--rule); }
+  .sign .here { font-size: 26px; }
+  .hero { grid-template-columns: minmax(0, 1fr); }
+  .stats { gap: 10px; font-size: 12px; }
+  .stat span { display: none; }
+  .brand-name { font-size: 17px; }
+  .crumb { display: none; }
+  #toasts .toast:not(:last-child) { display: none; }
+}
+@media (max-width: 480px) {
+  .brand-name { display: none; }
+  .topbar { gap: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  svg .pulse { animation: none; opacity: .5; }
+  .toast { animation: none; }
+  .city-card { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <button class="brand" id="homeBtn" aria-label="도시 선택 화면으로">
+    <span class="brand-mark">M</span><span class="brand-name">메트로 월드 패스</span>
+  </button>
+  <span class="crumb" id="crumb"></span>
+  <span class="spacer"></span>
+  <div class="stats">
+    <div class="stat"><span>점수</span><b id="sScore">0</b></div>
+    <div class="stat"><span>스탬프</span><b id="sStamps">0</b></div>
+    <div class="stat"><span>배지</span><b id="sBadges">0</b></div>
+  </div>
+  <button class="tb-btn" id="passBtn">여권</button>
+  <button class="tb-btn" id="soundBtn" aria-pressed="false">소리 꺼짐</button>
+</header>
+
+<main id="home">
+  <div class="home-inner">
+    <section class="hero">
+      <div>
+        <h1>전 세계 지하철을<br>한 역씩 <em>탐험</em>하세요</h1>
+        <p>서울에서 런던까지, 실제 노선 순서대로 그려진 여섯 도시의 노선도를 타고 다닙니다. 새 역에 내릴 때마다 여권에 스탬프가 찍히고, 미션 역에 제시간에 도착하면 보너스 점수를 받습니다.</p>
+      </div>
+      <div class="howto">
+        <h2>플레이 방법</h2>
+        <ol>
+          <li>도시를 고르면 출발역에서 시작합니다.</li>
+          <li>노란색으로 빛나는 <b>인접역</b>을 누르면 한 정거장 이동합니다. (한 정거장 2분, 환승 +4분)</li>
+          <li>빨간 깃발 <b>미션역</b>에 제한 시간 안에 도착하면 보너스!</li>
+          <li>한 노선의 모든 역을 방문하면 노선 배지를 얻습니다.</li>
+        </ol>
+      </div>
+    </section>
+    <section class="cities" id="cityGrid" aria-label="도시 목록"></section>
+    <p class="foot-note">노선도는 주요 역만 골라 실제 운행 순서대로 이은 간략도입니다. 역 위치는 실제 좌표를 바탕으로 보기 좋게 펼쳐 놓았습니다. 진행 상황은 이 브라우저에 저장됩니다.</p>
+  </div>
+</main>
+
+<main id="game" hidden>
+  <div class="map-wrap" id="mapWrap">
+    <svg id="map" aria-label="지하철 노선도"></svg>
+    <div class="legend" id="legend"></div>
+    <div class="map-ctrl">
+      <button id="zIn" aria-label="확대">+</button>
+      <button id="zOut" aria-label="축소">−</button>
+      <button id="zMe" aria-label="현재 위치로" title="현재 위치로">◎</button>
+      <button id="zFit" aria-label="전체 보기" title="전체 보기">⤢</button>
+    </div>
+  </div>
+  <aside class="panel" id="panel"></aside>
+</main>
+
+<div id="toasts" aria-live="polite"></div>
+<div id="modalRoot"></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   DATA — 주요 역만 실제 운행 순서대로. geo = 위치 기준점 [위도, 경도]
+   (기준점이 없는 역은 앞뒤 기준점 사이에 고르게 배치)
+   ===================================================================== */
+const CITIES = [
+{
+  id: "seoul", name: "서울", country: "대한민국", flag: "🇰🇷", since: 1974, start: "시청",
+  system: "서울 지하철",
+  fact: "1974년 8월 15일, 서울역–청량리 구간 1호선이 개통하며 서울 지하철의 역사가 시작됐습니다.",
+  lines: [
+    { id: "1", name: "1호선", color: "#0052A4", st: ["청량리","제기동","신설동","동묘앞","동대문","종로5가","종로3가","종각","시청","서울역","남영","용산","노량진","대방","신길","영등포","신도림","구로"] },
+    { id: "2", name: "2호선", color: "#00A84D", loop: true, st: ["시청","을지로입구","을지로3가","을지로4가","동대문역사문화공원","신당","상왕십리","왕십리","한양대","뚝섬","성수","건대입구","구의","강변","잠실나루","잠실","잠실새내","종합운동장","삼성","선릉","역삼","강남","교대","서초","방배","사당","낙성대","서울대입구","봉천","신림","신대방","구로디지털단지","대림","신도림","문래","영등포구청","당산","합정","홍대입구","신촌","이대","아현","충정로"] },
+    { id: "3", name: "3호선", color: "#EF7C1C", st: ["경복궁","안국","종로3가","을지로3가","충무로","동대입구","약수","금호","옥수","압구정","신사","잠원","고속터미널","교대","남부터미널","양재"] },
+    { id: "4", name: "4호선", color: "#00A5DE", st: ["혜화","동대문","동대문역사문화공원","충무로","명동","회현","서울역","숙대입구","삼각지","신용산","이촌","동작","총신대입구(이수)","사당"] }
+  ],
+  geo: {
+    "청량리":[37.580,127.047],"동대문":[37.571,127.010],"종로3가":[37.571,126.991],"시청":[37.565,126.977],"서울역":[37.555,126.972],
+    "용산":[37.530,126.965],"노량진":[37.514,126.942],"영등포":[37.516,126.907],"신도림":[37.509,126.891],"구로":[37.503,126.882],
+    "을지로3가":[37.566,126.992],"동대문역사문화공원":[37.565,127.008],"왕십리":[37.561,127.037],"성수":[37.544,127.056],"건대입구":[37.540,127.070],
+    "강변":[37.535,127.095],"잠실":[37.513,127.100],"삼성":[37.509,127.063],"강남":[37.498,127.028],"교대":[37.494,127.014],"사당":[37.477,126.982],
+    "서울대입구":[37.481,126.953],"신림":[37.484,126.930],"당산":[37.534,126.902],"합정":[37.550,126.914],"홍대입구":[37.557,126.924],
+    "신촌":[37.555,126.937],"충정로":[37.560,126.964],"경복궁":[37.576,126.973],"안국":[37.576,126.985],"충무로":[37.561,126.994],
+    "약수":[37.554,127.010],"옥수":[37.541,127.018],"압구정":[37.527,127.028],"신사":[37.516,127.020],"고속터미널":[37.505,127.005],
+    "양재":[37.484,127.034],"혜화":[37.582,127.002],"명동":[37.561,126.986],"삼각지":[37.535,126.973],"이촌":[37.522,126.974]
+  },
+  facts: {
+    "서울역": "1900년 남대문정거장으로 문을 열었고, 1925년에 지은 옛 역사는 지금 문화공간 '문화역서울 284'로 쓰입니다.",
+    "시청": "1974년 1호선 첫 개통 구간에 포함된 역으로, 1호선과 2호선이 만납니다.",
+    "강남": "서울 지하철에서 하루 승하차 인원이 가장 많은 역 중 하나입니다.",
+    "잠실": "롯데월드와 롯데월드타워가 바로 연결되는 역입니다.",
+    "홍대입구": "공항철도와 경의·중앙선도 함께 서는, 서울 서부의 대표적인 환승역입니다.",
+    "동대문역사문화공원": "2호선·4호선·5호선이 만나는 역으로, 동대문디자인플라자(DDP)와 이어집니다."
+  }
+},
+{
+  id: "tokyo", fish: 0.55, name: "도쿄", country: "일본", flag: "🇯🇵", since: 1927, start: "Tokyo",
+  system: "JR 야마노테선 · 도쿄메트로",
+  fact: "1927년 우에노–아사쿠사 구간에 개통한 긴자선은 아시아 최초의 지하철입니다.",
+  lines: [
+    { id: "JY", name: "야마노테선", color: "#80C241", loop: true, st: ["Tokyo","Kanda","Akihabara","Okachimachi","Ueno","Uguisudani","Nippori","Nishi-Nippori","Tabata","Komagome","Sugamo","Otsuka","Ikebukuro","Mejiro","Takadanobaba","Shin-Okubo","Shinjuku","Yoyogi","Harajuku","Shibuya","Ebisu","Meguro","Gotanda","Osaki","Shinagawa","Takanawa Gateway","Tamachi","Hamamatsucho","Shimbashi","Yurakucho"] },
+    { id: "G", name: "긴자선", color: "#F39700", st: ["Asakusa","Tawaramachi","Inaricho","Ueno","Ueno-hirokoji","Suehirocho","Kanda","Mitsukoshimae","Nihombashi","Kyobashi","Ginza","Shimbashi","Toranomon","Tameike-Sanno","Akasaka-mitsuke","Aoyama-itchome","Gaiemmae","Omotesando","Shibuya"] },
+    { id: "M", name: "마루노우치선", color: "#E60012", st: ["Ikebukuro","Shin-otsuka","Myogadani","Korakuen","Hongo-sanchome","Ochanomizu","Awajicho","Otemachi","Tokyo","Ginza","Kasumigaseki","Kokkai-gijidomae","Akasaka-mitsuke","Yotsuya","Yotsuya-sanchome","Shinjuku-gyoemmae","Shinjuku-sanchome","Shinjuku"] }
+  ],
+  geo: {
+    "Tokyo":[35.681,139.767],"Kanda":[35.692,139.771],"Akihabara":[35.698,139.773],"Ueno":[35.714,139.777],"Nippori":[35.728,139.771],
+    "Tabata":[35.738,139.761],"Sugamo":[35.733,139.739],"Ikebukuro":[35.730,139.711],"Takadanobaba":[35.713,139.704],"Shinjuku":[35.690,139.700],
+    "Harajuku":[35.670,139.703],"Shibuya":[35.658,139.702],"Ebisu":[35.647,139.710],"Meguro":[35.634,139.716],"Osaki":[35.620,139.728],
+    "Shinagawa":[35.628,139.739],"Hamamatsucho":[35.655,139.757],"Shimbashi":[35.666,139.758],"Yurakucho":[35.675,139.763],
+    "Asakusa":[35.711,139.797],"Nihombashi":[35.682,139.774],"Ginza":[35.671,139.765],"Toranomon":[35.670,139.750],
+    "Akasaka-mitsuke":[35.677,139.737],"Omotesando":[35.665,139.712],"Korakuen":[35.708,139.752],"Ochanomizu":[35.700,139.764],
+    "Otemachi":[35.686,139.766],"Kasumigaseki":[35.674,139.751],"Yotsuya":[35.686,139.730],"Shinjuku-sanchome":[35.690,139.706]
+  },
+  facts: {
+    "Shinjuku": "하루 이용객이 300만 명을 넘어 '세계에서 가장 붐비는 역'으로 기네스북에 올라 있습니다.",
+    "Asakusa": "1927년 긴자선 첫 구간(우에노–아사쿠사)의 종점. 센소지 절이 바로 앞입니다.",
+    "Ueno": "긴자선 첫 개통 구간의 출발역이자 우에노 공원·동물원의 관문입니다.",
+    "Takanawa Gateway": "2020년에 문을 연 야마노테선의 가장 새로운 역입니다.",
+    "Tokyo": "1914년 개업. 붉은 벽돌로 된 마루노우치 역사는 2012년 원래 모습으로 복원됐습니다.",
+    "Akihabara": "전자상가와 애니메이션 숍으로 유명한 '전기의 거리'입니다."
+  }
+},
+{
+  id: "nyc", fish: 0.42, name: "뉴욕", country: "미국", flag: "🇺🇸", since: 1904, start: "Times Sq–42 St",
+  system: "New York City Subway",
+  fact: "1904년 개통. 24시간 365일 운행하는 몇 안 되는 대도시 지하철입니다.",
+  lines: [
+    { id: "1", name: "1 라인", color: "#EE352E", st: ["96 St","86 St","79 St","72 St","66 St–Lincoln Center","59 St–Columbus Circle","50 St","Times Sq–42 St","34 St–Penn Station","28 St","23 St","18 St","14 St","Christopher St","Houston St","Canal St","Franklin St","Chambers St","WTC Cortlandt","Rector St","South Ferry"] },
+    { id: "45", name: "4·5 라인 (급행)", color: "#00933C", st: ["125 St","86 St (Lexington)","Lexington Av/59 St","Grand Central–42 St","14 St–Union Sq","Brooklyn Bridge–City Hall","Fulton St","Wall St","Bowling Green"] },
+    { id: "7", name: "7 라인", color: "#B933AD", st: ["Flushing–Main St","Mets–Willets Point","111 St","103 St–Corona Plaza","Junction Blvd","90 St–Elmhurst Av","82 St–Jackson Hts","74 St–Broadway","69 St","61 St–Woodside","52 St","46 St–Bliss St","40 St–Lowery St","33 St–Rawson St","Queensboro Plaza","Court Sq","Hunters Point Av","Vernon Blvd–Jackson Av","Grand Central–42 St","5 Av","Times Sq–42 St","34 St–Hudson Yards"] },
+    { id: "L", name: "L 라인", color: "#A7A9AC", st: ["8 Av","6 Av","14 St–Union Sq","3 Av","1 Av","Bedford Av","Lorimer St","Graham Av","Grand St","Montrose Av","Morgan Av","Jefferson St","DeKalb Av","Myrtle–Wyckoff Avs"] }
+  ],
+  geo: {
+    "96 St":[40.794,-73.972],"72 St":[40.778,-73.982],"59 St–Columbus Circle":[40.768,-73.982],"Times Sq–42 St":[40.755,-73.987],
+    "34 St–Penn Station":[40.750,-73.991],"14 St":[40.738,-74.000],"Chambers St":[40.715,-74.009],"South Ferry":[40.702,-74.013],
+    "125 St":[40.804,-73.937],"86 St (Lexington)":[40.779,-73.956],"Lexington Av/59 St":[40.762,-73.968],"Grand Central–42 St":[40.752,-73.977],
+    "14 St–Union Sq":[40.735,-73.990],"Brooklyn Bridge–City Hall":[40.713,-74.004],"Bowling Green":[40.704,-74.014],
+    "Flushing–Main St":[40.760,-73.830],"Mets–Willets Point":[40.754,-73.846],"61 St–Woodside":[40.746,-73.903],
+    "Queensboro Plaza":[40.750,-73.940],"34 St–Hudson Yards":[40.756,-74.002],
+    "8 Av":[40.740,-74.002],"1 Av":[40.731,-73.982],"Bedford Av":[40.717,-73.957],"Myrtle–Wyckoff Avs":[40.700,-73.912]
+  },
+  facts: {
+    "Times Sq–42 St": "뉴욕 지하철에서 이용객이 가장 많은 역 복합체로, 여러 노선이 이곳에서 만납니다.",
+    "Grand Central–42 St": "1913년에 문을 연 그랜드 센트럴 터미널 바로 아래에 있는 지하철역입니다.",
+    "South Ferry": "스태튼아일랜드 페리 터미널과 이어지는 맨해튼 남쪽 끝의 역입니다.",
+    "Mets–Willets Point": "뉴욕 메츠의 홈구장 시티 필드와 US 오픈이 열리는 테니스 센터 앞입니다.",
+    "Bedford Av": "브루클린 윌리엄스버그의 중심. L 라인이 맨해튼을 벗어나 처음 서는 역입니다.",
+    "Brooklyn Bridge–City Hall": "브루클린 다리 보행로 입구와 뉴욕 시청이 가까이 있습니다."
+  }
+},
+{
+  id: "london", fish: 0.42, name: "런던", country: "영국", flag: "🇬🇧", since: 1863, start: "Oxford Circus",
+  system: "London Underground",
+  fact: "1863년 메트로폴리탄 철도가 패딩턴–패링던 구간을 열며 세계 최초의 지하철이 됐습니다.",
+  lines: [
+    { id: "C", name: "센트럴선", color: "#DC241F", st: ["Notting Hill Gate","Queensway","Lancaster Gate","Marble Arch","Bond Street","Oxford Circus","Tottenham Court Road","Holborn","Chancery Lane","St. Paul's","Bank","Liverpool Street","Bethnal Green","Mile End","Stratford"] },
+    { id: "V", name: "빅토리아선", color: "#0098D4", st: ["Brixton","Stockwell","Vauxhall","Pimlico","Victoria","Green Park","Oxford Circus","Warren Street","Euston","King's Cross St. Pancras","Highbury & Islington","Finsbury Park","Seven Sisters","Tottenham Hale","Blackhorse Road","Walthamstow Central"] },
+    { id: "P", name: "피카딜리선", color: "#0019A8", st: ["Hammersmith","Barons Court","Earl's Court","Gloucester Road","South Kensington","Knightsbridge","Hyde Park Corner","Green Park","Piccadilly Circus","Leicester Square","Covent Garden","Holborn","Russell Square","King's Cross St. Pancras","Caledonian Road","Holloway Road","Arsenal","Finsbury Park"] },
+    { id: "J", name: "주빌리선", color: "#868F98", st: ["Baker Street","Bond Street","Green Park","Westminster","Waterloo","Southwark","London Bridge","Bermondsey","Canada Water","Canary Wharf","North Greenwich","Canning Town","West Ham","Stratford"] }
+  ],
+  geo: {
+    "Notting Hill Gate":[51.509,-0.196],"Bond Street":[51.514,-0.149],"Oxford Circus":[51.515,-0.142],
+    "Holborn":[51.517,-0.120],"St. Paul's":[51.515,-0.098],"Bank":[51.513,-0.089],
+    "Liverpool Street":[51.518,-0.082],"Mile End":[51.525,-0.033],"Stratford":[51.541,-0.003],
+    "Brixton":[51.462,-0.115],"Vauxhall":[51.486,-0.124],"Victoria":[51.496,-0.144],"Green Park":[51.507,-0.143],"Euston":[51.528,-0.133],
+    "King's Cross St. Pancras":[51.530,-0.124],"Highbury & Islington":[51.546,-0.104],"Finsbury Park":[51.564,-0.106],"Walthamstow Central":[51.583,-0.020],
+    "Hammersmith":[51.492,-0.224],"Earl's Court":[51.492,-0.193],"South Kensington":[51.494,-0.174],"Knightsbridge":[51.501,-0.160],
+    "Piccadilly Circus":[51.510,-0.134],"Baker Street":[51.522,-0.157],"Westminster":[51.501,-0.125],
+    "Waterloo":[51.503,-0.113],"London Bridge":[51.505,-0.086],"Canada Water":[51.498,-0.050],"Canary Wharf":[51.503,-0.019],
+    "North Greenwich":[51.500,0.004],"West Ham":[51.528,0.005]
+  },
+  facts: {
+    "Baker Street": "1863년 세계 최초 지하철 구간에 있던 원래 역 중 하나로, 셜록 홈스 박물관이 근처에 있습니다.",
+    "King's Cross St. Pancras": "지하철 6개 노선이 서는 최대 환승역. 위층 킹스크로스역에는 '9¾ 승강장' 포토존이 있습니다.",
+    "Westminster": "빅벤과 국회의사당 바로 앞. 주빌리선 역사는 거대한 콘크리트 기둥 구조로 유명합니다.",
+    "Canary Wharf": "노먼 포스터가 설계한 대성당처럼 넓은 주빌리선 역입니다.",
+    "North Greenwich": "O2 아레나 바로 앞. 템스강 남쪽 그리니치 반도에 있습니다.",
+    "Bank": "잉글랜드 은행 아래에 있는 런던 금융가(시티)의 중심 역입니다."
+  }
+},
+{
+  id: "paris", fish: 0.5, name: "파리", country: "프랑스", flag: "🇫🇷", since: 1900, start: "Châtelet",
+  system: "Métro de Paris",
+  fact: "1900년 파리 만국박람회에 맞춰 1호선이 개통했습니다. 1호선은 2012년 무인 자동운전으로 전환됐습니다.",
+  lines: [
+    { id: "1", name: "1호선", color: "#FFCD00", st: ["La Défense","Esplanade de La Défense","Pont de Neuilly","Les Sablons","Porte Maillot","Argentine","Charles de Gaulle–Étoile","George V","Franklin D. Roosevelt","Champs-Élysées–Clemenceau","Concorde","Tuileries","Palais Royal–Musée du Louvre","Louvre–Rivoli","Châtelet","Hôtel de Ville","Saint-Paul","Bastille","Gare de Lyon","Reuilly–Diderot","Nation","Porte de Vincennes","Saint-Mandé","Bérault","Château de Vincennes"] },
+    { id: "4", name: "4호선", color: "#BE418D", st: ["Porte de Clignancourt","Simplon","Marcadet–Poissonniers","Château Rouge","Barbès–Rochechouart","Gare du Nord","Gare de l'Est","Château d'Eau","Strasbourg–Saint-Denis","Réaumur–Sébastopol","Étienne Marcel","Les Halles","Châtelet","Cité","Saint-Michel","Odéon","Saint-Germain-des-Prés","Saint-Sulpice","Saint-Placide","Montparnasse–Bienvenüe","Vavin","Raspail","Denfert-Rochereau","Mouton-Duvernet","Alésia","Porte d'Orléans"] },
+    { id: "6", name: "6호선", color: "#6ECA97", st: ["Charles de Gaulle–Étoile","Kléber","Boissière","Trocadéro","Passy","Bir-Hakeim","Dupleix","La Motte-Picquet–Grenelle","Cambronne","Sèvres–Lecourbe","Pasteur","Montparnasse–Bienvenüe","Edgar Quinet","Raspail","Denfert-Rochereau","Saint-Jacques","Glacière","Corvisart","Place d'Italie","Nationale","Chevaleret","Quai de la Gare","Bercy","Dugommier","Daumesnil","Bel-Air","Picpus","Nation"] }
+  ],
+  geo: {
+    "La Défense":[48.892,2.238],"Porte Maillot":[48.878,2.282],"Charles de Gaulle–Étoile":[48.874,2.295],"Franklin D. Roosevelt":[48.869,2.310],
+    "Concorde":[48.866,2.321],"Palais Royal–Musée du Louvre":[48.862,2.336],"Châtelet":[48.858,2.347],"Hôtel de Ville":[48.857,2.352],"Bastille":[48.853,2.369],
+    "Gare de Lyon":[48.845,2.373],"Nation":[48.848,2.396],"Château de Vincennes":[48.844,2.440],
+    "Porte de Clignancourt":[48.897,2.345],"Barbès–Rochechouart":[48.884,2.350],"Gare du Nord":[48.880,2.355],"Gare de l'Est":[48.876,2.358],
+    "Strasbourg–Saint-Denis":[48.869,2.354],"Les Halles":[48.862,2.346],"Cité":[48.855,2.347],"Saint-Michel":[48.853,2.344],
+    "Saint-Germain-des-Prés":[48.854,2.334],"Montparnasse–Bienvenüe":[48.843,2.323],"Raspail":[48.839,2.331],"Denfert-Rochereau":[48.834,2.332],
+    "Porte d'Orléans":[48.823,2.325],"Trocadéro":[48.863,2.287],"Bir-Hakeim":[48.854,2.289],"La Motte-Picquet–Grenelle":[48.849,2.298],
+    "Pasteur":[48.843,2.313],"Place d'Italie":[48.831,2.356],"Bercy":[48.840,2.379],"Daumesnil":[48.839,2.396]
+  },
+  facts: {
+    "Cité": "시테섬에 있는 유일한 메트로역. 노트르담 대성당이 걸어서 몇 분 거리입니다.",
+    "Bir-Hakeim": "6호선이 고가로 센강을 건너는 곳. 에펠탑이 가장 가까운 역 중 하나입니다.",
+    "Trocadéro": "샤요 궁 앞 광장에서 에펠탑 정면 전망을 볼 수 있습니다.",
+    "Concorde": "1호선 승강장 벽 타일에 '인간과 시민의 권리 선언' 글자가 새겨져 있습니다.",
+    "Palais Royal–Musée du Louvre": "루브르 박물관으로 바로 이어지는 역. 입구의 '야행자의 키오스크' 조형물이 유명합니다.",
+    "Gare du Nord": "유로스타가 출발하는, 유럽에서 가장 붐비는 기차역 중 하나입니다."
+  }
+},
+{
+  id: "hongkong", name: "홍콩", country: "중국 홍콩", flag: "🇭🇰", since: 1979, start: "Admiralty",
+  system: "MTR",
+  fact: "1979년 관당선 첫 구간이 개통했습니다. MTR은 정시운행률 99.9%를 넘는 것으로 유명합니다.",
+  lines: [
+    { id: "ISL", name: "아일랜드선", color: "#007DC5", st: ["Kennedy Town","HKU","Sai Ying Pun","Sheung Wan","Central","Admiralty","Wan Chai","Causeway Bay","Tin Hau","Fortress Hill","North Point","Quarry Bay","Tai Koo","Sai Wan Ho","Shau Kei Wan","Heng Fa Chuen","Chai Wan"] },
+    { id: "TWL", name: "취안완선", color: "#E2231A", st: ["Central","Admiralty","Tsim Sha Tsui","Jordan","Yau Ma Tei","Mong Kok","Prince Edward","Sham Shui Po","Cheung Sha Wan","Lai Chi Kok","Mei Foo","Lai King","Kwai Fong","Kwai Hing","Tai Wo Hau","Tsuen Wan"] },
+    { id: "KTL", name: "관당선", color: "#00AB4E", st: ["Whampoa","Ho Man Tin","Yau Ma Tei","Mong Kok","Prince Edward","Shek Kip Mei","Kowloon Tong","Lok Fu","Wong Tai Sin","Diamond Hill","Choi Hung","Kowloon Bay","Ngau Tau Kok","Kwun Tong","Lam Tin","Yau Tong","Tiu Keng Leng"] }
+  ],
+  geo: {
+    "Kennedy Town":[22.281,114.129],"Sheung Wan":[22.287,114.152],"Central":[22.282,114.158],"Admiralty":[22.279,114.165],
+    "Causeway Bay":[22.280,114.184],"North Point":[22.291,114.200],"Quarry Bay":[22.288,114.209],"Chai Wan":[22.265,114.237],
+    "Tsim Sha Tsui":[22.297,114.172],"Yau Ma Tei":[22.313,114.171],"Mong Kok":[22.319,114.169],"Prince Edward":[22.325,114.168],
+    "Sham Shui Po":[22.331,114.162],"Lai Chi Kok":[22.337,114.148],"Mei Foo":[22.338,114.138],"Lai King":[22.348,114.126],"Tsuen Wan":[22.374,114.118],
+    "Whampoa":[22.305,114.190],"Ho Man Tin":[22.309,114.183],"Shek Kip Mei":[22.332,114.169],"Kowloon Tong":[22.337,114.176],
+    "Wong Tai Sin":[22.342,114.194],"Diamond Hill":[22.340,114.201],"Kowloon Bay":[22.323,114.214],"Kwun Tong":[22.312,114.226],"Tiu Keng Leng":[22.304,114.253]
+  },
+  facts: {
+    "Admiralty": "아일랜드선·취안완선·남항도선·동철선이 만나는 홍콩 최대의 환승 허브입니다.",
+    "Tsim Sha Tsui": "빅토리아 하버 건너 홍콩섬 스카이라인이 보이는 침사추이 산책로가 가깝습니다.",
+    "Mong Kok": "세계에서 인구 밀도가 가장 높은 지역 중 하나. 레이디스 마켓이 있습니다.",
+    "Kennedy Town": "2014년 아일랜드선 서쪽 연장으로 문을 연 서쪽 종점입니다.",
+    "Wong Tai Sin": "향 연기가 끊이지 않는 웡타이신 사원 바로 앞입니다.",
+    "Central": "금융 중심가. 미드레벨 에스컬레이터와 스타페리 부두가 가깝습니다."
+  }
+}
+];
+
+/* =====================================================================
+   GRAPH + LAYOUT
+   ===================================================================== */
+const MIN_GAP = 34;   // 역 사이 최소 간격 (SVG 단위)
+const HOP_MIN = 2, XFER_MIN = 4;
+
+function buildCity(c) {
+  const nodes = new Map();
+  const adj = new Map();
+  const edges = [];
+  const node = (n) => {
+    if (!nodes.has(n)) { nodes.set(n, { name: n, lines: [], x: NaN, y: NaN, anchor: false }); adj.set(n, []); }
+    return nodes.get(n);
+  };
+  const lat0 = Object.values(c.geo)[0][0] * Math.PI / 180;
+  const proj = ([la, lo]) => [lo * Math.cos(lat0) * 1000, -la * 1000];
+
+  for (const L of c.lines) {
+    const seq = L.loop ? [...L.st, L.st[0]] : L.st;
+    seq.forEach(n => { const o = node(n); if (!o.lines.includes(L.id)) o.lines.push(L.id); });
+    for (let i = 0; i < seq.length - 1; i++) {
+      edges.push({ a: seq[i], b: seq[i + 1], line: L.id });
+      adj.get(seq[i]).push({ to: seq[i + 1], line: L.id });
+      adj.get(seq[i + 1]).push({ to: seq[i], line: L.id });
+    }
+  }
+  // anchors
+  for (const [n, g] of Object.entries(c.geo)) {
+    if (!nodes.has(n)) { console.warn("geo for unknown station", c.id, n); continue; }
+    const [x, y] = proj(g); const o = nodes.get(n); o.x = x; o.y = y; o.anchor = true;
+  }
+  // interpolate along lines
+  for (const L of c.lines) {
+    const seq = L.loop ? [...L.st, L.st[0]] : L.st;
+    const idx = seq.map((n, i) => nodes.get(n).anchor ? i : -1).filter(i => i >= 0);
+    if (idx[0] !== 0 || idx[idx.length - 1] !== seq.length - 1) console.warn("line ends not anchored", c.id, L.id);
+    for (let k = 0; k < idx.length - 1; k++) {
+      const i = idx[k], j = idx[k + 1], A = nodes.get(seq[i]), B = nodes.get(seq[j]);
+      for (let m = i + 1; m < j; m++) {
+        const o = nodes.get(seq[m]); if (!isNaN(o.x)) continue;
+        const t = (m - i) / (j - i); o.x = A.x + (B.x - A.x) * t; o.y = A.y + (B.y - A.y) * t;
+      }
+    }
+  }
+  const list = [...nodes.values()];
+  // fisheye: spread dense center, pull in far suburbs
+  const xs = list.filter(o => o.lines.length > 1);
+  const cx = xs.reduce((s, o) => s + o.x, 0) / xs.length, cy = xs.reduce((s, o) => s + o.y, 0) / xs.length;
+  let maxR = 0; list.forEach(o => { maxR = Math.max(maxR, Math.hypot(o.x - cx, o.y - cy)); });
+  list.forEach(o => {
+    const dx = o.x - cx, dy = o.y - cy, r = Math.hypot(dx, dy) || 1e-9;
+    const r2 = Math.pow(r / maxR, c.fish || 0.62) * 560;
+    o.x = dx / r * r2; o.y = dy / r * r2;
+  });
+  // relax: even out spacing (edge springs + repulsion + weak pull to geographic spot)
+  const L0 = MIN_GAP * 1.45;
+  // scale so the median track segment roughly matches the spring length
+  const lens = edges.map(e => { const a = nodes.get(e.a), b = nodes.get(e.b); return Math.hypot(b.x - a.x, b.y - a.y); }).sort((p, q) => p - q);
+  const sc = Math.max(1, L0 / (lens[Math.floor(lens.length / 2)] || 1));
+  list.forEach(o => { o.x *= sc; o.y *= sc; o.gx = o.x; o.gy = o.y; });
+  for (let it = 0; it < 500; it++) {
+    const cool = 1 - it / 500;
+    for (const e of edges) {
+      const a = nodes.get(e.a), b = nodes.get(e.b); const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1e-6;
+      const f = (d - L0) * 0.12 * cool, ux = dx / d, uy = dy / d;
+      a.x += ux * f; a.y += uy * f; b.x -= ux * f; b.y -= uy * f;
+    }
+    for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
+      const a = list[i], b = list[j]; let dx = b.x - a.x, dy = b.y - a.y; let d = Math.hypot(dx, dy);
+      if (d < 1e-6) { dx = 1; dy = 0.3; d = 1; }
+      if (d < MIN_GAP * 1.25) {
+        const push = (MIN_GAP * 1.25 - d) / 2 * 0.8, ux = dx / d, uy = dy / d;
+        a.x -= ux * push; a.y -= uy * push; b.x += ux * push; b.y += uy * push;
+      }
+    }
+    const k = 0.02 * cool + 0.004;
+    list.forEach(o => { o.x += (o.gx - o.x) * k; o.y += (o.gy - o.y) * k; });
+  }
+  // label placement: perpendicular to local track, pointing away from centre
+  let mx = 0, my = 0; list.forEach(o => { mx += o.x; my += o.y; }); mx /= list.length; my /= list.length;
+  for (const o of list) {
+    const nb = adj.get(o.name); let dx = 0, dy = 0;
+    nb.forEach(e => { const t = nodes.get(e.to); const vx = t.x - o.x, vy = t.y - o.y, d = Math.hypot(vx, vy) || 1;
+      // fold direction so opposite neighbours add up rather than cancel
+      let ux = vx / d, uy = vy / d; if (ux < 0 || (ux === 0 && uy < 0)) { ux = -ux; uy = -uy; } dx += ux; dy += uy; });
+    let px = -dy, py = dx; const pl = Math.hypot(px, py) || 1; px /= pl; py /= pl;
+    if (px * (o.x - mx) + py * (o.y - my) < 0) { px = -px; py = -py; }
+    if (Math.abs(px) < .2 && Math.abs(py) < .2) { px = 1; py = 0; }
+    o.lx = px; o.ly = py;
+  }
+  const lineById = Object.fromEntries(c.lines.map(L => [L.id, L]));
+  return { ...c, nodes, adj, edges, lineById, total: list.length };
+}
+const WORLD = Object.fromEntries(CITIES.map(c => [c.id, buildCity(c)]));
+
+/* time-optimal route over (station, line) states */
+function bestRoute(city, from, to, startLine) {
+  const key = (s, l) => s + "\u0001" + (l || "");
+  const dist = new Map(), prev = new Map(), open = [[0, from, startLine || null]];
+  dist.set(key(from, startLine), 0);
+  let best = null;
+  while (open.length) {
+    open.sort((a, b) => a[0] - b[0]);
+    const [d, s, l] = open.shift();
+    if (d > (dist.get(key(s, l)) ?? Infinity)) continue;
+    if (s === to) { best = [d, s, l]; break; }
+    for (const e of city.adj.get(s)) {
+      const nd = d + HOP_MIN + (l && l !== e.line ? XFER_MIN : 0), k = key(e.to, e.line);
+      if (nd < (dist.get(k) ?? Infinity)) { dist.set(k, nd); prev.set(k, [s, l]); open.push([nd, e.to, e.line]); }
+    }
+  }
+  if (!best) return null;
+  const path = []; let cur = [best[1], best[2]];
+  while (cur) { path.unshift(cur[0]); cur = prev.get(key(cur[0], cur[1])); }
+  return { time: best[0], path };
+}
+
+/* =====================================================================
+   STATE (저장: localStorage, 실패해도 게임은 동작)
+   ===================================================================== */
+const SAVE_KEY = "metro-world-pass-v1";
+let S = { score: 0, visited: {}, badges: {}, pos: {}, log: [], sound: false };
+try { const raw = localStorage.getItem(SAVE_KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch (e) {}
+function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
+
+let city = null;     // built city
+let P = null;        // S.pos[city.id]
+let busy = false;
+let selected = null; // station name for info panel
+let showRoute = false;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+const fmtClock = (m) => { const t = 6 * 60 + m; const h = Math.floor(t / 60) % 24, mm = t % 60; return String(h).padStart(2, "0") + ":" + String(mm).padStart(2, "0"); };
+const visitedSet = (cid) => (S.visited[cid] = S.visited[cid] || {});
+const stampCount = () => Object.values(S.visited).reduce((s, v) => s + Object.keys(v).length, 0);
+const chip = (L) => `<span class="chip"><i style="background:${L.color}"></i>${esc(L.name)}</span>`;
+
+/* ---------- sound ---------- */
+let actx = null;
+function chime(kind) {
+  if (!S.sound) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const notes = kind === "win" ? [659, 784, 988, 1319] : kind === "new" ? [784, 988] : [660];
+    notes.forEach((f, i) => {
+      const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + i * 0.12;
+      o.type = "sine"; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.18, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+      o.connect(g).connect(actx.destination); o.start(t); o.stop(t + 0.4);
+    });
+  } catch (e) {}
+}
+
+/* ---------- toasts ---------- */
+function toast(html, big) {
+  const el = document.createElement("div"); el.className = "toast" + (big ? " big" : ""); el.innerHTML = html;
+  $("toasts").appendChild(el); setTimeout(() => el.remove(), big ? 3600 : 2400);
+  while ($("toasts").children.length > 3) $("toasts").firstChild.remove();
+}
+function addLog(html) { S.log.unshift(html); S.log = S.log.slice(0, 8); }
+
+/* =====================================================================
+   HOME
+   ===================================================================== */
+function renderStats() {
+  $("sScore").textContent = S.score.toLocaleString("ko-KR");
+  $("sStamps").textContent = stampCount();
+  $("sBadges").textContent = Object.keys(S.badges).length;
+  $("soundBtn").textContent = S.sound ? "소리 켜짐" : "소리 꺼짐";
+  $("soundBtn").setAttribute("aria-pressed", String(S.sound));
+}
+function renderHome() {
+  $("cityGrid").innerHTML = CITIES.map(c0 => {
+    const c = WORLD[c0.id], v = Object.keys(visitedSet(c.id)).length, pct = Math.round(v / c.total * 100);
+    return `<button class="city-card" data-city="${c.id}">
+      <div class="city-sign"><span class="flag">${c.flag}</span>
+        <div><div class="nm">${esc(c.name)}</div><div class="sub">${esc(c.country)} · ${esc(c.system)}</div></div>
+        <div class="yr">${c.since}<br>개통</div></div>
+      <div class="city-body">
+        <div class="line-chips">${c.lines.map(chip).join("")}</div>
+        <div style="font-size:13px">${esc(c.fact)}</div>
+        <div class="progress"><div style="width:${pct}%"></div></div>
+        <div class="prog-row"><span>방문 ${v} / ${c.total}역</span><span>${pct}%</span></div>
+      </div></button>`;
+  }).join("");
+  $("cityGrid").querySelectorAll(".city-card").forEach(b => b.onclick = () => enterCity(b.dataset.city));
+}
+function showHome() {
+  city = null; $("game").hidden = true; $("home").hidden = false; $("crumb").innerHTML = "";
+  renderHome(); renderStats(); try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+}
+
+/* =====================================================================
+   CITY / MAP
+   ===================================================================== */
+const svgNS = "http://www.w3.org/2000/svg";
+const mk = (tag, attrs, parent) => { const e = document.createElementNS(svgNS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+let view = { s: 1, x: 0, y: 0 }, worldG, routeG, stG, meG, bounds;
+
+function enterCity(id) {
+  city = WORLD[id];
+  S.pos[id] = S.pos[id] || { cur: city.start, line: null, minutes: 0, mission: null };
+  P = S.pos[id];
+  if (!city.nodes.has(P.cur)) P.cur = city.start;
+  selected = null; showRoute = false;
+  markVisited(P.cur, true);
+  if (!P.mission) newMission(true);
+  $("home").hidden = true; $("game").hidden = false;
+  $("crumb").innerHTML = `${city.flag} <b>${esc(city.name)}</b> · ${esc(city.system)}`;
+  $("legend").innerHTML = city.lines.map(chip).join("");
+  drawMap(); startView(); renderPanel(); renderStats(); save();
+  try { history.replaceState(null, "", "#" + id); } catch (e) {}
+}
+
+function drawMap() {
+  const svg = $("map"); svg.innerHTML = "";
+  const list = [...city.nodes.values()];
+  const pad = 90;
+  bounds = { x0: Math.min(...list.map(o => o.x)) - pad, y0: Math.min(...list.map(o => o.y)) - pad,
+             x1: Math.max(...list.map(o => o.x)) + pad, y1: Math.max(...list.map(o => o.y)) + pad };
+  worldG = mk("g", {}, svg);
+  routeG = mk("g", {}, worldG);
+  const edgeG = mk("g", {}, worldG);
+  // parallel offset for shared segments
+  const groups = new Map();
+  city.edges.forEach(e => { const k = [e.a, e.b].sort().join("\u0002"); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(e); });
+  for (const es of groups.values()) {
+    es.forEach((e, i) => {
+      const a = city.nodes.get(e.a), b = city.nodes.get(e.b), dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1;
+      let px = -dy / d, py = dx / d; if (e.a > e.b) { px = -px; py = -py; }
+      const off = (i - (es.length - 1) / 2) * 7.5;
+      mk("line", { x1: a.x + px * off, y1: a.y + py * off, x2: b.x + px * off, y2: b.y + py * off,
+        stroke: city.lineById[e.line].color, class: "edge", "data-line": e.line }, edgeG);
+    });
+  }
+  stG = mk("g", {}, worldG);
+  for (const o of list) {
+    const g = mk("g", { class: "st" + (o.lines.length > 1 ? " xfer" : ""), "data-st": o.name, transform: `translate(${o.x},${o.y})` }, stG);
+    mk("circle", { r: 13, class: "halo" }, g);
+    mk("circle", { r: o.lines.length > 1 ? 7.5 : 5.5, class: "dot" }, g);
+    const t = mk("text", { x: o.lx * 14, y: o.ly * 14 + 4 }, g);
+    t.setAttribute("text-anchor", o.lx > 0.35 ? "start" : o.lx < -0.35 ? "end" : "middle");
+    if (Math.abs(o.lx) <= 0.35) t.setAttribute("y", o.ly > 0 ? 22 : -14);
+    t.textContent = o.name;
+    const title = mk("title", {}, g); title.textContent = o.name;
+  }
+  meG = mk("g", { "pointer-events": "none" }, worldG);
+  refreshMap();
+}
+
+function refreshMap() {
+  if (!city) return;
+  const vis = visitedSet(city.id);
+  const adjSet = new Set(city.adj.get(P.cur).map(e => e.to));
+  stG.querySelectorAll(".st").forEach(g => {
+    const n = g.dataset.st;
+    g.classList.toggle("visited", !!vis[n]);
+    g.classList.toggle("adj", adjSet.has(n) && !busy);
+  });
+  // route hint
+  routeG.innerHTML = "";
+  if (showRoute && P.mission && P.mission.state === "active") {
+    const r = bestRoute(city, P.cur, P.mission.target, P.line);
+    if (r) mk("polyline", { class: "route", points: r.path.map(n => { const o = city.nodes.get(n); return o.x + "," + o.y; }).join(" ") }, routeG);
+  }
+  // markers
+  meG.innerHTML = "";
+  if (P.mission && P.mission.state === "active") {
+    const t = city.nodes.get(P.mission.target);
+    mk("circle", { cx: t.x, cy: t.y, r: 14, class: "target-ring" }, meG);
+    mk("path", { d: `M${t.x} ${t.y - 12} v-22 l14 6 l-14 6`, class: "target-flag" }, meG);
+    mk("line", { x1: t.x, y1: t.y - 12, x2: t.x, y2: t.y - 34, stroke: "var(--bad)", "stroke-width": 2 }, meG);
+  }
+  const me = city.nodes.get(P.cur);
+  const tok = mk("g", { id: "token", transform: `translate(${me.x},${me.y})` }, meG);
+  mk("circle", { r: 12, class: "pulse" }, tok);
+  mk("circle", { r: 11, class: "me-ring" }, tok);
+  const gl = mk("text", { class: "me-glyph", "text-anchor": "middle", y: 4.5 }, tok); gl.textContent = "M";
+}
+
+/* ---------- pan / zoom ---------- */
+function applyView() { worldG.setAttribute("transform", `translate(${view.x},${view.y}) scale(${view.s})`); }
+function svgSize() { const r = $("map").getBoundingClientRect(); return { w: r.width || 800, h: r.height || 600 }; }
+function fitView() {
+  const { w, h } = svgSize(), bw = bounds.x1 - bounds.x0, bh = bounds.y1 - bounds.y0;
+  view.s = Math.min(w / bw, h / bh); view.x = (w - bw * view.s) / 2 - bounds.x0 * view.s; view.y = (h - bh * view.s) / 2 - bounds.y0 * view.s;
+  view.s = Math.max(view.s, 0.25); applyView();
+}
+function startView() {
+  fitView();
+  if (view.s < 0.75) centerOn(P.cur, 0.85);  // small screens: start close to the player
+}
+function zoomAt(f, px, py) {
+  const ns = Math.min(4, Math.max(0.2, view.s * f)); const k = ns / view.s;
+  view.x = px - (px - view.x) * k; view.y = py - (py - view.y) * k; view.s = ns; applyView();
+}
+function centerOn(n, minScale) {
+  const o = city.nodes.get(n), { w, h } = svgSize();
+  if (minScale && view.s < minScale) view.s = minScale;
+  view.x = w / 2 - o.x * view.s; view.y = h / 2 - o.y * view.s; applyView();
+}
+function ensureVisible(n) {
+  const o = city.nodes.get(n), { w, h } = svgSize(), sx = o.x * view.s + view.x, sy = o.y * view.s + view.y, m = 50;
+  if (sx < m || sy < m || sx > w - m || sy > h - m) centerOn(n);
+}
+(function setupPanZoom() {
+  const wrap = $("mapWrap"), pts = new Map(); let start = null, moved = false, pinch = null;
+  wrap.addEventListener("pointerdown", (e) => {
+    if (e.target.closest(".map-ctrl")) return;
+    wrap.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    moved = false; start = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, target: e.target };
+    if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), s: view.s }; }
+  });
+  wrap.addEventListener("pointermove", (e) => {
+    if (!pts.has(e.pointerId) || !start) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pts.size === 2 && pinch) {
+      const [a, b] = [...pts.values()], r = $("map").getBoundingClientRect();
+      const d = Math.hypot(a.x - b.x, a.y - b.y); moved = true;
+      zoomAt((pinch.s * d / pinch.d) / view.s, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top); return;
+    }
+    const dx = e.clientX - start.x, dy = e.clientY - start.y;
+    if (Math.hypot(dx, dy) > 5) { moved = true; wrap.classList.add("dragging"); }
+    if (moved) { view.x = start.vx + dx; view.y = start.vy + dy; applyView(); }
+  });
+  const end = (e) => {
+    if (!pts.has(e.pointerId)) return;
+    pts.delete(e.pointerId); wrap.classList.remove("dragging");
+    if (pts.size < 2) pinch = null;
+    if (pts.size === 0 && start && !moved && e.type === "pointerup") {
+      const g = start.target.closest && start.target.closest(".st"); if (g) onStationClick(g.dataset.st);
+    }
+    if (pts.size === 0) start = null;
+    else { const p = [...pts.values()][0]; start = { x: p.x, y: p.y, vx: view.x, vy: view.y, target: start.target }; }
+  };
+  wrap.addEventListener("pointerup", end); wrap.addEventListener("pointercancel", end);
+  wrap.addEventListener("wheel", (e) => { e.preventDefault(); const r = $("map").getBoundingClientRect(); zoomAt(Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+  const mid = () => { const { w, h } = svgSize(); return [w / 2, h / 2]; };
+  $("zIn").onclick = () => zoomAt(1.3, ...mid());
+  $("zOut").onclick = () => zoomAt(1 / 1.3, ...mid());
+  $("zMe").onclick = () => centerOn(P.cur, 1.2);
+  $("zFit").onclick = () => fitView();
+  window.addEventListener("resize", () => { if (city) startView(); });
+})();
+
+/* =====================================================================
+   GAMEPLAY
+   ===================================================================== */
+function markVisited(n, silent) {
+  const vis = visitedSet(city.id);
+  if (vis[n]) return false;
+  vis[n] = Date.now();
+  if (!silent) { S.score += 10; addLog(`새 스탬프 <b>${esc(n)}</b> <span class="pts">+10</span>`); }
+  // line badges
+  for (const lid of city.nodes.get(n).lines) {
+    const L = city.lineById[lid], key = city.id + ":" + lid;
+    if (!S.badges[key] && L.st.every(s => vis[s])) {
+      S.badges[key] = Date.now(); S.score += 100;
+      addLog(`노선 완주 배지 <b>${esc(L.name)}</b> <span class="pts">+100</span>`);
+      toast(`🏅 <b>${esc(city.name)} ${esc(L.name)}</b> 전 역 방문! 노선 배지 획득 +100`, true); chime("win");
+    }
+  }
+  const ck = city.id + ":ALL";
+  if (!S.badges[ck] && Object.keys(vis).length >= city.total) {
+    S.badges[ck] = Date.now(); S.score += 300;
+    addLog(`도시 정복 <b>${esc(city.name)}</b> <span class="pts">+300</span>`);
+    toast(`🌏 <b>${esc(city.name)}</b>의 모든 역을 탐험했습니다! +300`, true); chime("win");
+  }
+  return true;
+}
+
+function newMission(silent) {
+  const names = [...city.nodes.keys()].filter(n => n !== P.cur);
+  const vis = visitedSet(city.id);
+  // prefer unvisited targets 3+ hops away
+  let pool = names.map(n => ({ n, r: bestRoute(city, P.cur, n, P.line) })).filter(o => o.r && o.r.path.length >= 4);
+  const unv = pool.filter(o => !vis[o.n]); if (unv.length) pool = unv;
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  const par = pick.r.time;
+  P.mission = { target: pick.n, par, limit: par + 6 + Math.ceil(par * 0.25), used: 0, state: "active" };
+  showRoute = false;
+  if (!silent) { toast(`새 미션: <b>${esc(pick.n)}</b>까지 ${P.mission.limit}분 안에 가세요`); }
+}
+
+function onStationClick(n) {
+  if (busy) return;
+  const opts = city.adj.get(P.cur).filter(e => e.to === n);
+  if (opts.length) travel(n); else { selected = n === P.cur ? null : n; renderPanel(); }
+}
+
+function travel(to, preferLine) {
+  if (busy) return;
+  const opts = city.adj.get(P.cur).filter(e => e.to === to); if (!opts.length) return;
+  const e = opts.find(o => o.line === preferLine) || opts.find(o => o.line === P.line) || opts[0];
+  const xfer = P.line && e.line !== P.line;
+  const cost = HOP_MIN + (xfer ? XFER_MIN : 0);
+  if (xfer) toast(`환승 ${esc(city.lineById[P.line].name)} → <b>${esc(city.lineById[e.line].name)}</b> (+${XFER_MIN}분)`);
+  const from = city.nodes.get(P.cur), dest = city.nodes.get(to);
+  busy = true; selected = null; refreshMap();
+  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const dur = reduce ? 0 : 520, t0 = performance.now();
+  const step = (now) => {
+    const t = dur ? Math.min(1, (now - t0) / dur) : 1, k = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    const tok = $("token"); if (tok) tok.setAttribute("transform", `translate(${from.x + (dest.x - from.x) * k},${from.y + (dest.y - from.y) * k})`);
+    if (t < 1) requestAnimationFrame(step); else arrive(to, e.line, cost);
+  };
+  requestAnimationFrame(step);
+}
+
+function arrive(to, line, cost) {
+  P.cur = to; P.line = line; P.minutes += cost; busy = false;
+  const isNew = markVisited(to);
+  const M = P.mission;
+  if (M && M.state === "active") {
+    M.used += cost;
+    if (to === M.target) {
+      const onTime = M.used <= M.limit;
+      const bonus = onTime ? 50 + (M.limit - M.used) * 5 : 10;
+      S.score += bonus; M.state = onTime ? "done" : "late-done";
+      addLog(`미션 ${onTime ? "성공" : "지각 도착"} <b>${esc(to)}</b> <span class="pts">+${bonus}</span>`);
+      toast(onTime ? `🎯 미션 성공! <b>${esc(to)}</b> 도착 · ${M.used}분 / 제한 ${M.limit}분 · <b>+${bonus}</b>` : `지각 도착… <b>${esc(to)}</b> · +${bonus}`, true);
+      chime(onTime ? "win" : "new");
+    } else if (M.used > M.limit && !M.lateNotified) {
+      M.lateNotified = true; toast(`⏰ 제한 시간 초과! 그래도 도착하면 <b>+10</b>`);
+    }
+  }
+  if (isNew && !(M && M.target === to)) { toast(`📮 새 스탬프 <b>${esc(to)}</b> +10`); chime("new"); }
+  else if (!isNew && !(M && M.target === to)) chime("hop");
+  refreshMap(); ensureVisible(to); renderPanel(); renderStats(); save();
+}
+
+/* ---------- side panel ---------- */
+function renderPanel() {
+  const here = city.nodes.get(P.cur), vis = visitedSet(city.id), M = P.mission;
+  const nexts = city.adj.get(P.cur).slice().sort((a, b) => (a.line === P.line ? -1 : 0) - (b.line === P.line ? -1 : 0));
+  const fact = city.facts[P.cur];
+  let h = `<div class="sign">
+    <div class="eyebrow">현재 역 · ${esc(city.name)}</div>
+    <div class="here">${esc(P.cur)}</div>
+    <div class="line-chips">${here.lines.map(l => chip(city.lineById[l])).join("")}</div>
+    <div class="clock">${fmtClock(P.minutes)} · 탑승 중 ${P.line ? esc(city.lineById[P.line].name) : "—"}</div>
+  </div>`;
+  if (fact) h += `<div class="section"><div class="fact"><b>이 역 이야기</b>${esc(fact)}</div></div>`;
+  h += `<div class="section"><h3>다음 역으로 이동</h3><div class="next-list">` +
+    nexts.map(e => {
+      const L = city.lineById[e.line], xf = P.line && e.line !== P.line, cost = HOP_MIN + (xf ? XFER_MIN : 0);
+      return `<button class="next-btn" data-go="${esc(e.to)}" data-line="${esc(e.line)}"><span class="bar" style="background:${L.color}"></span>
+        <span><span class="nm">${esc(e.to)}</span>${vis[e.to] ? "" : '<span class="new">NEW</span>'}<br><span class="ln">${esc(L.name)}${xf ? " · 환승" : ""}</span></span>
+        <span class="cost${xf ? " xf" : ""}">${cost}분</span></button>`;
+    }).join("") + `</div></div>`;
+  if (M) {
+    const late = M.state === "active" && M.used > M.limit;
+    const remain = bestRoute(city, P.cur, M.target, P.line);
+    const pct = Math.max(0, Math.min(100, 100 - M.used / M.limit * 100));
+    h += `<div class="section"><h3>미션</h3><div class="mission${late ? " late" : ""}">`;
+    if (M.state === "active") {
+      h += `<div class="to">🚩 ${esc(M.target)}</div>
+        <div class="timebar"><div style="width:${pct}%"></div></div>
+        <div class="meta"><span>사용 <b>${M.used}</b>분</span><span>제한 <b>${M.limit}</b>분</span><span>최단 남은 <b>${remain ? remain.time : "?"}</b>분</span></div>
+        <div class="state" style="color:var(${late ? "--bad" : "--good"})">${late ? "시간 초과 — 도착하면 +10" : "제시간 도착 시 50 + 남은 1분당 5점"}</div>
+        <div class="row"><button class="btn" id="hintBtn">${showRoute ? "경로 숨기기" : "최단 경로 보기"}</button><button class="btn" id="skipBtn">다른 미션</button></div>`;
+    } else {
+      h += `<div class="to">${M.state === "done" ? "미션 완료!" : "늦었지만 도착!"}</div>
+        <div class="meta"><span>${esc(M.target)}</span><span>사용 <b>${M.used}</b>분 / 제한 ${M.limit}분</span></div>
+        <div class="row"><button class="btn primary" id="nextMBtn">다음 미션 받기</button></div>`;
+    }
+    h += `</div></div>`;
+  }
+  if (selected && selected !== P.cur) {
+    const o = city.nodes.get(selected), r = bestRoute(city, P.cur, selected, P.line), f = city.facts[selected];
+    h += `<div class="section"><h3>선택한 역 <button class="btn" id="closeSel">닫기</button></h3>
+      <div class="info-name">${esc(selected)} ${vis[selected] ? "· 방문함" : ""}</div>
+      <div class="line-chips">${o.lines.map(l => chip(city.lineById[l])).join("")}</div>
+      ${r ? `<div class="foot-note">현재 역에서 최단 ${r.time}분 · ${r.path.length - 1}정거장 (인접한 역만 직접 이동할 수 있어요)</div>` : ""}
+      ${f ? `<div class="fact"><b>이 역 이야기</b>${esc(f)}</div>` : ""}</div>`;
+  }
+  h += `<div class="section"><h3>노선별 탐험 <span style="font-weight:500;letter-spacing:0">${Object.keys(vis).length}/${city.total}</span></h3><div class="lines-prog">` +
+    city.lines.map(L => { const v = L.st.filter(s => vis[s]).length;
+      return `<div class="lp" style="--c:${L.color}">${chip(L)}<div class="progress"><div style="width:${v / L.st.length * 100}%"></div></div><span class="n">${v}/${L.st.length}</span></div>`; }).join("") +
+    `</div></div>`;
+  h += `<div class="section"><h3>도시 이야기</h3><div style="font-size:13px">${esc(city.fact)}</div></div>`;
+  if (S.log.length) h += `<div class="section"><h3>최근 기록</h3><ul class="log">${S.log.map(l => `<li>${l}</li>`).join("")}</ul></div>`;
+  h += `<div class="section"><div class="row"><button class="btn" id="backBtn">← 다른 도시로</button></div></div>`;
+  $("panel").innerHTML = h;
+  $("panel").querySelectorAll("[data-go]").forEach(b => b.onclick = () => travel(b.dataset.go, b.dataset.line));
+  const on = (id, fn) => { const el = $(id); if (el) el.onclick = fn; };
+  on("hintBtn", () => { showRoute = !showRoute; refreshMap(); renderPanel(); });
+  on("skipBtn", () => { newMission(); refreshMap(); renderPanel(); save(); });
+  on("nextMBtn", () => { newMission(); refreshMap(); renderPanel(); save(); });
+  on("closeSel", () => { selected = null; renderPanel(); });
+  on("backBtn", showHome);
+}
+/* ---------- passport ---------- */
+function openPassport() {
+  const rnd = (s) => { let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) | 0; return ((h % 7) - 3) + "deg"; };
+  let body = `<div class="foot-note">스탬프 ${stampCount()}개 · 배지 ${Object.keys(S.badges).length}개 · 점수 ${S.score.toLocaleString("ko-KR")}</div>`;
+  const badgeHtml = [];
+  for (const c of Object.values(WORLD)) {
+    for (const L of c.lines) if (S.badges[c.id + ":" + L.id]) badgeHtml.push(`<span class="badge"><i style="background:${L.color}">✓</i>${c.flag} ${esc(c.name)} ${esc(L.name)}</span>`);
+    if (S.badges[c.id + ":ALL"]) badgeHtml.push(`<span class="badge"><i style="background:var(--ink)">★</i>${c.flag} ${esc(c.name)} 정복</span>`);
+  }
+  body += `<div class="stamp-city"><h4>배지</h4><div class="badges">${badgeHtml.join("") || '<span class="foot-note">아직 없어요. 한 노선의 모든 역을 방문해 보세요.</span>'}</div></div>`;
+  for (const c of Object.values(WORLD)) {
+    const vis = visitedSet(c.id), names = Object.keys(vis).sort((a, b) => vis[a] - vis[b]);
+    const color = (n) => c.lineById[c.nodes.get(n).lines[0]].color;
+    body += `<div class="stamp-city"><h4>${c.flag} ${esc(c.name)} <span>${names.length}/${c.total}</span></h4><div class="stamps">` +
+      (names.length ? names.map(n => `<span class="stamp" style="--c:${color(n)};--r:${rnd(n)}">${esc(n)}</span>`).join("") : '<span class="stamp none">아직 방문 전</span>') + `</div></div>`;
+  }
+  body += `<div class="row"><button class="btn" id="resetBtn">기록 초기화</button></div><div id="resetConfirm"></div>`;
+  $("modalRoot").innerHTML = `<div class="modal-bg" id="mbg"><div class="modal" role="dialog" aria-modal="true" aria-label="탐험 여권">
+    <div class="sign"><div class="here">탐험 여권</div><button class="tb-btn" id="mClose">닫기</button></div>
+    <div class="modal-body">${body}</div></div></div>`;
+  const close = () => { $("modalRoot").innerHTML = ""; };
+  $("mClose").onclick = close; $("mbg").onclick = (e) => { if (e.target.id === "mbg") close(); };
+  $("mClose").focus();
+  $("resetBtn").onclick = () => {
+    $("resetConfirm").innerHTML = `<div class="fact"><b>정말 초기화할까요?</b>모든 스탬프·배지·점수가 지워집니다.<div class="row" style="margin-top:8px"><button class="btn primary" id="resetYes">초기화</button><button class="btn" id="resetNo">취소</button></div></div>`;
+    $("resetNo").onclick = () => { $("resetConfirm").innerHTML = ""; };
+    $("resetYes").onclick = () => { S = { score: 0, visited: {}, badges: {}, pos: {}, log: [], sound: S.sound }; save(); close(); showHome(); toast("기록을 초기화했습니다"); };
+  };
+}
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("modalRoot").innerHTML) $("modalRoot").innerHTML = ""; });
+
+$("homeBtn").onclick = showHome;
+$("passBtn").onclick = openPassport;
+$("soundBtn").onclick = () => { S.sound = !S.sound; renderStats(); save(); if (S.sound) chime("new"); };
+
+/* start */
+(function boot() {
+  const h = (location.hash || "").slice(1);
+  if (WORLD[h]) enterCity(h); else showHome();
+  window.addEventListener("hashchange", () => { const k = location.hash.slice(1); if (WORLD[k] && (!city || city.id !== k)) enterCity(k); });
+})();
+</script>
+<!-- END PAGE -->
+</body>
+</html>
