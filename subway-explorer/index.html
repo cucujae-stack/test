@@ -1119,16 +1119,15 @@ let trainG = null;
 function buildTrain() {
   trainG = mk("g", { class: "train", "pointer-events": "none", style: "display:none" }, worldG);
   const body = mk("g", { class: "train-cars" }, trainG);
-  for (let c = 0; c < 3; c++) {
-    const x = -39 + c * 26;
-    mk("rect", { x, y: -7, width: 24, height: 14, rx: c === 2 ? 6 : 3, class: "car" }, body);
-    mk("rect", { x: x + 4, y: -3.5, width: 6, height: 7, rx: 1, class: "win" }, body);
-    mk("rect", { x: x + 13, y: -3.5, width: 6, height: 7, rx: 1, class: "win" }, body);
-    mk("rect", { x: x + 9, y: -8.5, width: 6, height: 3, class: "door" }, body);
-    mk("rect", { x: x + 9, y: 5.5, width: 6, height: 3, class: "door" }, body);
+  // 한 칸짜리 열차: 차체, 창문 3개, 양옆 문 2개씩, 앞쪽 전조등
+  mk("rect", { x: -16, y: -7, width: 32, height: 14, rx: 5, class: "car" }, body);
+  for (const wx of [-12, -3, 6]) mk("rect", { x: wx, y: -3.5, width: 6, height: 7, rx: 1, class: "win" }, body);
+  for (const dx of [-8, 2]) {
+    mk("rect", { x: dx, y: -8.5, width: 6, height: 3, class: "door" }, body);
+    mk("rect", { x: dx, y: 5.5, width: 6, height: 3, class: "door" }, body);
   }
-  mk("circle", { cx: 33, cy: -3.5, r: 1.6, class: "lamp" }, body);
-  mk("circle", { cx: 33, cy: 3.5, r: 1.6, class: "lamp" }, body);
+  mk("circle", { cx: 14, cy: -3.5, r: 1.6, class: "lamp" }, body);
+  mk("circle", { cx: 14, cy: 3.5, r: 1.6, class: "lamp" }, body);
 }
 function showTrain(color) { if (!trainG) return; trainG.style.display = ""; trainG.style.setProperty("--tc", color); }
 function hideTrain() { if (trainG) { trainG.style.display = "none"; trainG.classList.remove("open"); } }
