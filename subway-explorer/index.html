@@ -1,0 +1,1414 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- BEGIN PAGE -->
+<title>메트로 월드 패스</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: one-screen app. Top signage bar, schematic map canvas, platform-sign side panel (stacks under the map on phones). */
+:root {
+  --bg: #EEF1F4;         /* tunnel-tile grey, faint blue bias */
+  --paper: #FFFFFF;
+  --ink: #16202A;
+  --muted: #5A6776;
+  --rule: #D3DAE2;
+  --grid: #E2E7EC;
+  --sign-bg: #121A22;    /* platform sign */
+  --sign-fg: #F4F6F8;
+  --sign-muted: #9AA8B6;
+  --accent: #FFC20E;     /* wayfinding yellow */
+  --accent-ink: #16202A;
+  --good: #1F8A4C;
+  --bad: #C2372B;
+  --font-display: "Black Han Sans", "IBM Plex Sans KR", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1318; --paper: #151D25; --ink: #E6ECF1; --muted: #93A1AF; --rule: #2A3642; --grid: #18222B;
+    --sign-bg: #05090D; --sign-fg: #F4F6F8; --sign-muted: #8D9BA9; --accent: #FFC20E; --accent-ink: #16202A;
+    --good: #43B97A; --bad: #EF6A5E; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1318; --paper: #151D25; --ink: #E6ECF1; --muted: #93A1AF; --rule: #2A3642; --grid: #18222B;
+  --sign-bg: #05090D; --sign-fg: #F4F6F8; --sign-muted: #8D9BA9; --accent: #FFC20E; --accent-ink: #16202A;
+  --good: #43B97A; --bad: #EF6A5E; color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 14px; line-height: 1.5;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--sign-bg); }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- top bar ---------- */
+.topbar {
+  background: var(--sign-bg); color: var(--sign-fg);
+  padding-block: 10px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap; flex: none;
+}
+.brand { display: flex; align-items: center; gap: 10px; background: none; border: 0; padding: 0; color: inherit; }
+.brand-mark {
+  width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink);
+  display: grid; place-items: center; font-family: var(--font-display); font-size: 17px;
+}
+.brand-name { font-family: var(--font-display); font-size: 20px; letter-spacing: .02em; }
+.crumb { color: var(--sign-muted); font-size: 13px; }
+.crumb b { color: var(--sign-fg); font-weight: 700; }
+.spacer { flex: 1; }
+.stats { display: flex; gap: 16px; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 13px; }
+.stat span { color: var(--sign-muted); font-family: var(--font-body); font-size: 11px; letter-spacing: .06em; margin-right: 6px; }
+.tb-btn {
+  background: transparent; border: 1px solid #ffffff33; color: var(--sign-fg);
+  border-radius: 6px; padding: 5px 10px; font-size: 13px;
+}
+.tb-btn:hover { border-color: var(--accent); }
+
+/* ---------- home ---------- */
+#home { flex: 1; overflow-y: auto; }
+.home-inner {
+  max-width: 1120px; margin: 0 auto;
+  padding-block: 32px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 28px;
+}
+.hero { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 28px; align-items: end; }
+.hero h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(34px, 6vw, 60px); line-height: 1.05; margin: 0; text-wrap: balance; }
+.hero h1 em { font-style: normal; background: var(--accent); color: var(--accent-ink); padding: 0 .12em; }
+.hero p { margin: 12px 0 0; color: var(--muted); max-width: 52ch; font-size: 15px; }
+.howto { background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; display: grid; gap: 8px; }
+.howto h2 { margin: 0; font-size: 12px; letter-spacing: .1em; color: var(--muted); font-weight: 700; }
+.howto ol { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.cities { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 16px; }
+.city-card {
+  text-align: left; background: var(--paper); border: 1px solid var(--rule); border-radius: 10px;
+  padding: 0; overflow: hidden; display: grid; grid-template-rows: auto 1fr; transition: transform .15s, border-color .15s;
+}
+.city-card:hover { transform: translateY(-2px); border-color: var(--ink); }
+.city-sign { background: var(--sign-bg); color: var(--sign-fg); padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+.city-sign .flag { font-size: 26px; line-height: 1; }
+.city-sign .nm { font-family: var(--font-display); font-size: 24px; line-height: 1.1; }
+.city-sign .sub { color: var(--sign-muted); font-size: 12px; }
+.city-sign .yr { margin-left: auto; font-family: var(--font-mono); font-size: 12px; color: var(--accent); text-align: right; }
+.city-body { padding: 14px 16px 16px; display: grid; gap: 10px; align-content: start; }
+.line-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; padding: 2px 8px 2px 4px; border-radius: 999px; border: 1px solid var(--rule); background: var(--paper); }
+.chip i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.progress { height: 6px; background: var(--grid); border-radius: 3px; overflow: hidden; }
+.progress > div { height: 100%; background: var(--ink); }
+.prog-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.foot-note { color: var(--muted); font-size: 12px; }
+
+/* ---------- game ---------- */
+#game { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) 360px; min-height: 0; }
+.map-wrap { position: relative; min-height: 0; overflow: hidden; background: var(--bg);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 32px 32px; touch-action: none; cursor: grab; }
+.map-wrap.dragging { cursor: grabbing; }
+#map { width: 100%; height: 100%; display: block; user-select: none; -webkit-user-select: none; }
+.map-ctrl { position: absolute; right: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 6px; }
+.map-ctrl button {
+  width: 38px; height: 38px; border-radius: 8px; background: var(--paper); border: 1px solid var(--rule);
+  font-size: 18px; line-height: 1; display: grid; place-items: center;
+}
+.map-ctrl button:hover { border-color: var(--ink); }
+.map-search { position: absolute; left: 12px; top: 12px; width: min(280px, calc(100% - 24px)); }
+.map-search input {
+  width: 100%; box-sizing: border-box; font: inherit; font-size: 14px; padding: 8px 12px; border-radius: 8px;
+  border: 1px solid var(--rule); background: var(--paper); color: var(--ink);
+}
+.map-search input:focus { outline: 3px solid var(--accent); outline-offset: 0; border-color: var(--ink); }
+.legend { position: absolute; left: 12px; top: 58px; display: flex; flex-wrap: wrap; gap: 6px; max-width: calc(100% - 24px); pointer-events: none; }
+
+svg .edge { fill: none; stroke-linecap: round; stroke-width: 7; }
+svg .edge.dim { opacity: .28; }
+svg .route { fill: none; stroke: var(--accent); stroke-width: 15; stroke-linecap: round; stroke-linejoin: round; opacity: .55; }
+svg .st { cursor: pointer; }
+svg .st circle.dot { fill: var(--paper); stroke: var(--ink); stroke-width: 2.5; }
+svg .st.xfer circle.dot { stroke-width: 3.5; }
+svg .st.visited circle.dot { fill: var(--ink); }
+svg .st.adj circle.halo { fill: var(--accent); opacity: .55; }
+svg .st circle.halo { fill: transparent; }
+svg .st:hover circle.dot { stroke: var(--accent); }
+svg .st text { font-family: var(--font-body); font-size: 11.5px; fill: var(--ink); paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; font-weight: 500; }
+svg .st.visited text { font-weight: 700; }
+svg .st.adj text { font-weight: 700; }
+/* label level-of-detail: far = only key labels, mid = transfer stations */
+svg[data-zoom="far"] .st text, svg[data-zoom="mid"] .st:not(.xfer) text { display: none; }
+svg[data-zoom="far"] .st.key text, svg[data-zoom="mid"] .st.key text { display: inline; font-size: calc(11px * var(--inv, 1)); stroke-width: calc(4px * var(--inv, 1)); }
+svg[data-zoom="mid"] .st.xfer text { font-size: calc(10px * var(--inv, 1)); stroke-width: calc(4px * var(--inv, 1)); }
+svg[data-zoom="far"] .st:not(.key) circle.dot { stroke-width: 2; }
+svg .sel-ring { fill: none; stroke: var(--ink); stroke-width: 2.5; stroke-dasharray: 2 3; }
+svg .target-ring { fill: none; stroke: var(--bad); stroke-width: 3; stroke-dasharray: 4 3; }
+svg .target-flag { fill: var(--bad); }
+svg .me-ring { fill: var(--accent); stroke: var(--sign-bg); stroke-width: 2.5; }
+svg .me-glyph { fill: var(--accent-ink); font-family: var(--font-display); font-size: 12px; }
+svg .pulse { fill: none; stroke: var(--accent); stroke-width: 3; transform-box: fill-box; transform-origin: center; animation: pulse 1.6s ease-out infinite; }
+@keyframes pulse { from { transform: scale(.6); opacity: .9; } to { transform: scale(2.1); opacity: 0; } }
+
+.panel { background: var(--paper); border-left: 1px solid var(--rule); overflow-y: auto; min-height: 0; display: flex; flex-direction: column; }
+.sign { background: var(--sign-bg); color: var(--sign-fg); padding: 16px 18px 18px; display: grid; gap: 8px; }
+.sign .eyebrow { font-size: 11px; letter-spacing: .12em; color: var(--sign-muted); }
+.sign .here { font-family: var(--font-display); font-size: 32px; line-height: 1.1; word-break: keep-all; overflow-wrap: anywhere; }
+.sign .chip { background: transparent; color: var(--sign-fg); border-color: #ffffff30; }
+.sign .clock { font-family: var(--font-mono); font-size: 12px; color: var(--sign-muted); font-variant-numeric: tabular-nums; }
+.section { padding: 14px 18px; border-bottom: 1px solid var(--rule); display: grid; gap: 10px; }
+.section h3 { margin: 0; font-size: 11px; letter-spacing: .12em; color: var(--muted); font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+.next-list { display: grid; gap: 6px; }
+.next-btn {
+  display: grid; grid-template-columns: 6px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  text-align: left; background: var(--bg); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px 8px 0; overflow: hidden;
+}
+.next-btn:hover { border-color: var(--ink); }
+.next-btn .bar { align-self: stretch; }
+.next-btn .nm { font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+.next-btn .ln { font-size: 12px; color: var(--muted); }
+.next-btn .cost { font-family: var(--font-mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+.next-btn .cost.xf { color: var(--bad); }
+.next-btn .new { font-size: 10px; font-weight: 700; background: var(--accent); color: var(--accent-ink); padding: 1px 5px; border-radius: 3px; margin-left: 6px; vertical-align: 1px; }
+
+.mission { border: 2px solid var(--ink); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; }
+.mission .to { font-family: var(--font-display); font-size: 22px; line-height: 1.15; overflow-wrap: anywhere; }
+.mission .meta { display: flex; gap: 14px; flex-wrap: wrap; font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.mission .meta b { color: var(--ink); }
+.mission.late { border-color: var(--bad); }
+.mission .state { font-size: 12px; font-weight: 700; }
+.timebar { height: 8px; border-radius: 4px; background: var(--grid); overflow: hidden; }
+.timebar > div { height: 100%; background: var(--good); transition: width .3s; }
+.mission.late .timebar > div { background: var(--bad); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { border: 1px solid var(--rule); background: var(--paper); border-radius: 7px; padding: 6px 12px; font-size: 13px; font-weight: 500; }
+.btn:hover { border-color: var(--ink); }
+.btn.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.info-name { font-weight: 700; font-size: 16px; }
+.fact { background: var(--bg); border-radius: 8px; padding: 10px 12px; font-size: 13px; }
+.fact b { display: block; font-size: 11px; letter-spacing: .1em; color: var(--muted); margin-bottom: 2px; }
+.lines-prog { display: grid; gap: 8px; }
+.lp { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 12px; }
+.lp .progress > div { background: var(--c); }
+.lp .n { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); }
+.log { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 12.5px; color: var(--muted); }
+.log li b { color: var(--ink); }
+.log .pts { font-family: var(--font-mono); color: var(--good); }
+
+
+/* ---------- riding ---------- */
+.badge { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box; border-radius: 11px; font-size: 12px; font-weight: 700; line-height: 1; font-family: var(--font-body); flex: none; }
+.badge.wide { font-size: 11px; padding: 0 7px; }
+.pf-sign { background: var(--paper); border: 2px solid var(--ink); border-radius: 8px; overflow: hidden; }
+.pf-bar { height: 8px; background: var(--lc); }
+.pf-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; padding: 10px 10px 4px; }
+.pf-side { font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+.pf-side.right { text-align: right; }
+.pf-here { display: inline-flex; align-items: center; gap: 6px; }
+.pf-here b { font-family: var(--font-display); font-size: 22px; font-weight: 400; line-height: 1.1; }
+.pf-head { text-align: center; font-size: 12px; color: var(--muted); padding: 0 10px 8px; }
+.opt-list { display: grid; gap: 6px; }
+.opt { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; text-align: left; background: var(--bg); border: 1px solid var(--rule); border-radius: 8px; padding: 9px 10px; }
+.opt:hover, .opt:focus-visible { border-color: var(--ink); }
+.opt-main { display: grid; min-width: 0; }
+.opt-main b { overflow-wrap: anywhere; }
+.opt-main span { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.opt-tag { font-size: 11.5px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.opt-tag.xf { color: var(--bad); }
+i.thru { font-style: normal; font-size: 10.5px; font-weight: 700; color: var(--paper); background: var(--ink); padding: 1px 5px; border-radius: 3px; vertical-align: 1px; }
+i.new { font-style: normal; font-size: 10px; font-weight: 700; background: var(--accent); color: var(--accent-ink); padding: 0 4px; border-radius: 3px; }
+.led { background: #07090B; color: #FFB31A; border-radius: 8px; padding: 10px 12px; display: grid; gap: 4px; font-family: var(--font-mono); box-shadow: inset 0 0 0 2px #1E252C; }
+.led-top { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #7CD992; }
+.led-main { font-size: 16px; font-weight: 600; line-height: 1.35; font-family: var(--font-body); }
+.led-sub { font-size: 12.5px; color: #FFD27A; font-family: var(--font-body); }
+.led.goal .led-main { color: #FF6B5E; }
+.blink { animation: blink 1s steps(2, start) infinite; }
+@keyframes blink { to { visibility: hidden; } }
+.approach { height: 10px; border-radius: 5px; background: var(--grid); position: relative; overflow: hidden; }
+.approach span { position: absolute; top: 0; bottom: 0; left: 0; width: 34%; background: var(--lc); border-radius: 5px; animation: approach var(--dur) ease-out forwards; }
+@keyframes approach { from { transform: translateX(-100%); } to { transform: translateX(195%); } }
+.ride-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.btn.big { flex: 1; min-width: 0; padding: 12px 14px; font-size: 15px; font-weight: 700; }
+.btn.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn kbd { font-family: var(--font-mono); font-size: 10.5px; opacity: .65; border: 1px solid currentColor; border-radius: 3px; padding: 0 3px; margin-left: 6px; }
+.pulse-btn { animation: pbtn 1s ease-in-out infinite alternate; }
+@keyframes pbtn { to { box-shadow: 0 0 0 6px color-mix(in srgb, var(--bad) 35%, transparent); } }
+.strip { list-style: none; margin: 0; padding: 0; display: grid; }
+.strip li { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 34px; position: relative; }
+.strip li::before { content: ""; position: absolute; left: 7px; top: 0; bottom: 0; width: 4px; background: var(--lc); }
+.strip li:first-child::before { top: 50%; }
+.strip li:last-child::before { bottom: 50%; }
+.strip .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--paper); border: 3px solid var(--lc); box-sizing: border-box; position: relative; z-index: 1; margin-left: 2px; }
+.strip li.here .dot { width: 16px; height: 16px; margin-left: 0; background: var(--accent); border-color: var(--ink); }
+.strip li.passed { color: var(--muted); }
+.strip li.next .snm { font-weight: 700; }
+.strip li.next .dot { background: var(--accent); }
+.strip li.here .snm { font-weight: 700; }
+.strip li.goal .snm { color: var(--bad); font-weight: 700; }
+.strip .snm { overflow-wrap: anywhere; }
+.strip .xb { display: flex; gap: 3px; flex-wrap: wrap; justify-content: flex-end; }
+.strip .xb .badge { min-width: 18px; height: 18px; font-size: 10px; }
+.strip i.end { font-style: normal; font-size: 10.5px; color: var(--muted); border: 1px solid var(--rule); border-radius: 3px; padding: 0 4px; }
+.walk { display: grid; gap: 10px; }
+.walk-sign { display: flex; align-items: center; gap: 8px; background: var(--sign-bg); color: var(--sign-fg); border-radius: 6px; padding: 10px 12px; }
+.walk-sign .arrow { margin-left: auto; color: var(--accent); font-size: 18px; }
+.walk-track { height: 44px; border-radius: 8px; position: relative; overflow: hidden; background: repeating-linear-gradient(90deg, var(--grid) 0 22px, var(--bg) 22px 44px); border: 1px solid var(--rule); }
+.walk-track::after { content: ""; position: absolute; left: 0; right: 0; bottom: 6px; height: 3px; background: var(--lc); opacity: .7; }
+.walker { position: absolute; top: 6px; left: 0; font-size: 24px; animation: walk var(--walk) linear forwards; }
+@keyframes walk { from { left: 2%; } to { left: calc(98% - 28px); } }
+.mission .to .sub { font-family: var(--font-body); font-size: 13px; color: var(--muted); margin-left: 6px; }
+svg .train .car { fill: var(--tc, #888); stroke: #0B1117; stroke-width: 1.6; }
+svg .train .win { fill: #DDE9F3; opacity: .9; }
+svg .train .door { fill: #0B1117; opacity: .55; }
+svg .train.open .door { fill: var(--accent); opacity: 1; animation: blink .5s steps(2, start) 3; }
+svg .train .lamp { fill: #FFF6C8; }
+svg .train { filter: drop-shadow(0 2px 2px rgba(0,0,0,.35)); }
+.sign .orig { color: var(--sign-muted); font-size: 14px; margin-top: -4px; }
+.orig-s { color: var(--muted); font-weight: 400; font-size: 13px; }
+.badge.walkb { background: var(--grid); font-size: 13px; }
+svg .walk-link { stroke: var(--muted); stroke-width: 3; stroke-dasharray: 2 5; stroke-linecap: round; fill: none; }
+/* toast + modal */
+#toasts { position: fixed; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 64px); display: grid; gap: 8px; z-index: 30; pointer-events: none; width: min(92vw, 420px); }
+.toast { background: var(--sign-bg); color: var(--sign-fg); border-left: 5px solid var(--accent); padding: 10px 14px; border-radius: 6px; box-shadow: 0 8px 24px #0004; font-size: 13.5px; animation: tin .25s ease-out; }
+.toast.big { border-left-color: var(--good); }
+.toast b { color: var(--accent); }
+@keyframes tin { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+.modal-bg { position: fixed; inset: 0; background: #0009; z-index: 40; display: grid; place-items: center; padding: 16px; }
+.modal { background: var(--paper); color: var(--ink); border-radius: 12px; width: min(720px, 100%); max-height: min(86vh, 900px); overflow-y: auto; }
+.modal .sign { border-radius: 12px 12px 0 0; display: flex; align-items: center; gap: 12px; }
+.modal .sign .here { font-size: 26px; }
+.modal .sign .tb-btn { margin-left: auto; }
+.modal-body { padding: 18px; display: grid; gap: 18px; }
+.stamp-city h4 { margin: 0 0 8px; font-size: 14px; display: flex; gap: 8px; align-items: baseline; }
+.stamp-city h4 span { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-weight: 500; }
+.stamps { display: flex; flex-wrap: wrap; gap: 6px; }
+.stamp { font-size: 11.5px; border: 1.5px solid var(--c); color: var(--ink); border-radius: 4px; padding: 1px 6px; transform: rotate(var(--r)); background: var(--bg); }
+.stamp.none { border-style: dashed; border-color: var(--rule); color: var(--muted); }
+.badges { display: flex; flex-wrap: wrap; gap: 8px; }
+.badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 4px 10px 4px 4px; border-radius: 999px; background: var(--bg); }
+.badge i { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-style: normal; font-size: 10px; }
+
+@media (max-width: 860px) {
+  #game { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 52%) minmax(0, 48%); }
+  .panel { border-left: 0; border-top: 1px solid var(--rule); }
+  .sign .here { font-size: 26px; }
+  .hero { grid-template-columns: minmax(0, 1fr); }
+  .stats { gap: 10px; font-size: 12px; }
+  .stat span { display: none; }
+  .brand-name { font-size: 17px; }
+  .crumb { display: none; }
+  .panel .sign.station-head { display: none; }
+  .panel .sign { padding: 10px 16px 12px; gap: 4px; }
+  #toasts .toast:not(:last-child) { display: none; }
+}
+@media (max-width: 480px) {
+  .brand-name { display: none; }
+  .topbar { gap: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  svg .pulse { animation: none; opacity: .5; }
+  .toast { animation: none; }
+  .blink, .walker, .approach span, .pulse-btn, svg .train.open .door { animation: none; }
+  .city-card { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <button class="brand" id="homeBtn" aria-label="도시 선택 화면으로">
+    <span class="brand-mark">M</span><span class="brand-name">메트로 월드 패스</span>
+  </button>
+  <span class="crumb" id="crumb"></span>
+  <span class="spacer"></span>
+  <div class="stats">
+    <div class="stat"><span>점수</span><b id="sScore">0</b></div>
+    <div class="stat"><span>스탬프</span><b id="sStamps">0</b></div>
+    <div class="stat"><span>배지</span><b id="sBadges">0</b></div>
+  </div>
+  <button class="tb-btn" id="passBtn">여권</button>
+  <button class="tb-btn" id="soundBtn" aria-pressed="false">소리 꺼짐</button>
+</header>
+
+<main id="home">
+  <div class="home-inner">
+    <section class="hero">
+      <div>
+        <h1>전 세계 지하철을<br>한 역씩 <em>탐험</em>하세요</h1>
+        <p>서울은 수도권 전철 18개 노선, 560개 역을 실제 위치 그대로 담았습니다. 연천에서 신창까지, 인천공항에서 춘천까지 한 정거장씩 타고 다니며 새 역마다 여권에 스탬프를 찍고, 미션 역에 제시간에 도착해 보너스 점수를 받으세요. 오사카는 지하철에 JR·한큐·한신·게이한·난카이·긴테쓰·모노레일·노면전차까지 54개 노선, 678개 역을 실제 위치 그대로 담았습니다. 도쿄·뉴욕·런던·파리·홍콩은 주요 역만 담은 간략 노선도입니다.</p>
+      </div>
+      <div class="howto">
+        <h2>플레이 방법</h2>
+        <ol>
+          <li>도시를 고르면 출발역에서 시작합니다.</li>
+          <li>승강장에서 <b>탈 열차</b>(○○행)를 고르면 열차가 들어옵니다.</li>
+          <li>열차는 역마다 섭니다. 내릴 역에서 <b>내리기</b>(Space)를 누르세요. 놓치면 그냥 지나갑니다.</li>
+          <li>내린 역에서 다른 노선을 고르면 <b>환승 통로</b>를 걸어갑니다. (한 정거장 2분, 환승 4분, 열차 대기 1~3분)</li>
+          <li>빨간 깃발 <b>미션역</b>에서 제한 시간 안에 내리면 보너스!</li>
+          <li>한 노선의 모든 역을 방문하면 노선 배지를 얻습니다.</li>
+        </ol>
+      </div>
+    </section>
+    <section class="cities" id="cityGrid" aria-label="도시 목록"></section>
+    <p class="foot-note">서울 역 좌표: 서울 열린데이터광장 「서울시 역사마스터 정보」. 오사카: Seo-4d696b75/station_database (駅データ.jp 기반, 2026년 9월판). 오사카부를 지나는 노선 전부이며 신칸센과 간사이 밖 구간은 뺐습니다. 서울은 정규 운행 노선 기준이며 GTX-A, 인천 1·2호선, 경강선 등 서울을 지나지 않는 노선은 아직 넣지 않았습니다. 다른 도시는 주요 역만 실제 운행 순서대로 이은 간략도입니다. 진행 상황은 이 브라우저에 저장됩니다.</p>
+  </div>
+</main>
+
+<main id="game" hidden>
+  <div class="map-wrap" id="mapWrap">
+    <svg id="map" aria-label="지하철 노선도"></svg>
+    <div class="map-search"><input id="stSearch" type="search" list="stList" placeholder="역 이름으로 찾기" aria-label="역 검색" autocomplete="off"><datalist id="stList"></datalist></div>
+    <div class="legend" id="legend"></div>
+    <div class="map-ctrl">
+      <button id="zIn" aria-label="확대">+</button>
+      <button id="zOut" aria-label="축소">−</button>
+      <button id="zMe" aria-label="현재 위치로" title="현재 위치로">◎</button>
+      <button id="zFit" aria-label="전체 보기" title="전체 보기">⤢</button>
+    </div>
+  </div>
+  <aside class="panel" id="panel"></aside>
+</main>
+
+<div id="toasts" aria-live="polite"></div>
+<div id="modalRoot"></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   DATA — 주요 역만 실제 운행 순서대로. geo = 위치 기준점 [위도, 경도]
+   (기준점이 없는 역은 앞뒤 기준점 사이에 고르게 배치)
+   ===================================================================== */
+/* 서울: tools/build_seoul.py가 만들어 넣는 데이터 (직접 고치지 마세요) */
+/* SEOUL-DATA:BEGIN */
+const SEOUL_DATA = {"lines":[{"id":"1","name":"1호선","short":"1","color":"#0052A4","segs":[["연천","전곡","청산","소요산","동두천","보산","동두천중앙","지행","덕정","덕계","양주","녹양","가능","의정부","회룡","망월사","도봉산","도봉","방학","창동","녹천","월계","광운대","석계","신이문","외대앞","회기","청량리","제기동","신설동","동묘앞","동대문","종로5가","종로3가","종각","시청","서울역","남영","용산","노량진","대방","신길","영등포","신도림","구로","구일","개봉","오류동","온수","역곡","소사","부천","중동","송내","부개","부평","백운","동암","간석","주안","도화","제물포","도원","동인천","인천"],["연천","전곡","청산","소요산","동두천","보산","동두천중앙","지행","덕정","덕계","양주","녹양","가능","의정부","회룡","망월사","도봉산","도봉","방학","창동","녹천","월계","광운대","석계","신이문","외대앞","회기","청량리","제기동","신설동","동묘앞","동대문","종로5가","종로3가","종각","시청","서울역","남영","용산","노량진","대방","신길","영등포","신도림","구로","가산디지털단지","독산","금천구청","석수","관악","안양","명학","금정","군포","당정","의왕","성균관대","화서","수원","세류","병점","세마","오산대","오산","진위","송탄","서정리","지제","평택","성환","직산","두정","천안","봉명","쌍용","아산","탕정","배방","온양온천","신창"],["금천구청","광명"],["병점","서동탄"]]},{"id":"2","name":"2호선","short":"2","color":"#00A84D","segs":[["시청","을지로입구","을지로3가","을지로4가","동대문역사문화공원","신당","상왕십리","왕십리","한양대","뚝섬","성수","건대입구","구의","강변","잠실나루","잠실","잠실새내","종합운동장","삼성","선릉","역삼","강남","교대","서초","방배","사당","낙성대","서울대입구","봉천","신림","신대방","구로디지털단지","대림","신도림","문래","영등포구청","당산","합정","홍대입구","신촌","이대","아현","충정로","시청"],["성수","용답","신답","용두","신설동"],["신도림","도림천","양천구청","신정네거리","까치산"]],"loopNames":["내선순환","외선순환"]},{"id":"3","name":"3호선","short":"3","color":"#EF7C1C","segs":[["대화","주엽","정발산","마두","백석","대곡","화정","원당","원흥","삼송","지축","구파발","연신내","불광","녹번","홍제","무악재","독립문","경복궁","안국","종로3가","을지로3가","충무로","동대입구","약수","금호","옥수","압구정","신사","잠원","고속터미널","교대","남부터미널","양재","매봉","도곡","대치","학여울","대청","일원","수서","가락시장","경찰병원","오금"]]},{"id":"4","name":"4호선","short":"4","color":"#00A5DE","segs":[["진접","오남","별내별가람","불암산","상계","노원","창동","쌍문","수유","미아","미아사거리","길음","성신여대입구","한성대입구","혜화","동대문","동대문역사문화공원","충무로","명동","회현","서울역","숙대입구","삼각지","신용산","이촌","동작","총신대입구(이수)","사당","남태령","선바위","경마공원","대공원","과천","정부과천청사","인덕원","평촌","범계","금정","산본","수리산","대야미","반월","상록수","한대앞","중앙","고잔","초지","안산","신길온천","정왕","오이도"]]},{"id":"5","name":"5호선","short":"5","color":"#996CAC","segs":[["방화","개화산","김포공항","송정","마곡","발산","우장산","화곡","까치산","신정","목동","오목교","양평","영등포구청","영등포시장","신길","여의도","여의나루","마포","공덕","애오개","충정로","서대문","광화문","종로3가","을지로4가","동대문역사문화공원","청구","신금호","행당","왕십리","마장","답십리","장한평","군자","아차산","광나루","천호","강동","길동","굽은다리","명일","고덕","상일동","강일","미사","하남풍산","하남시청","하남검단산"],["방화","개화산","김포공항","송정","마곡","발산","우장산","화곡","까치산","신정","목동","오목교","양평","영등포구청","영등포시장","신길","여의도","여의나루","마포","공덕","애오개","충정로","서대문","광화문","종로3가","을지로4가","동대문역사문화공원","청구","신금호","행당","왕십리","마장","답십리","장한평","군자","아차산","광나루","천호","강동","둔촌동","올림픽공원","방이","오금","개롱","거여","마천"]]},{"id":"6","name":"6호선","short":"6","color":"#CD7C2F","segs":[["응암","역촌","불광","독바위","연신내","구산","응암"],["응암","새절","증산","디지털미디어시티","월드컵경기장","마포구청","망원","합정","상수","광흥창","대흥","공덕","효창공원앞","삼각지","녹사평","이태원","한강진","버티고개","약수","청구","신당","동묘앞","창신","보문","안암","고려대","월곡","상월곡","돌곶이","석계","태릉입구","화랑대","봉화산","신내"]],"loopNames":["응암순환","응암순환"]},{"id":"7","name":"7호선","short":"7","color":"#747F00","segs":[["장암","도봉산","수락산","마들","노원","중계","하계","공릉","태릉입구","먹골","중화","상봉","면목","사가정","용마산","중곡","군자","어린이대공원","건대입구","뚝섬유원지","청담","강남구청","학동","논현","반포","고속터미널","내방","총신대입구(이수)","남성","숭실대입구","상도","장승배기","신대방삼거리","보라매","신풍","대림","남구로","가산디지털단지","철산","광명사거리","천왕","온수","까치울","부천종합운동장","춘의","신중동","부천시청","상동","삼산체육관","굴포천","부평구청","산곡","석남"]]},{"id":"8","name":"8호선","short":"8","color":"#E6186C","segs":[["별내","다산","동구릉","구리","장자호수공원","암사역사공원","암사","천호","강동구청","몽촌토성","잠실","석촌","송파","가락시장","문정","장지","복정","남위례","산성","남한산성입구","단대오거리","신흥","수진","모란"]]},{"id":"9","name":"9호선","short":"9","color":"#BDB092","segs":[["개화","김포공항","공항시장","신방화","마곡나루","양천향교","가양","증미","등촌","염창","신목동","선유도","당산","국회의사당","여의도","샛강","노량진","노들","흑석","동작","구반포","신반포","고속터미널","사평","신논현","언주","선정릉","삼성중앙","봉은사","종합운동장","삼전","석촌고분","석촌","송파나루","한성백제","올림픽공원","둔촌오륜","중앙보훈병원"]]},{"id":"K","name":"경의·중앙선","short":"경의중앙","color":"#77C4A3","segs":[["임진강","운천","문산","파주","월롱","금촌","금릉","운정","야당","탄현","일산","풍산","백마","곡산","대곡","능곡","행신","강매","화전","수색","디지털미디어시티","가좌","홍대입구","서강대","공덕","효창공원앞","용산","이촌","서빙고","한남","옥수","응봉","왕십리","청량리","회기","중랑","상봉","망우","양원","구리","도농","양정","덕소","도심","팔당","운길산","양수","신원","국수","아신","오빈","양평#중앙","원덕","용문","지평"],["임진강","운천","문산","파주","월롱","금촌","금릉","운정","야당","탄현","일산","풍산","백마","곡산","대곡","능곡","행신","강매","화전","수색","디지털미디어시티","가좌","신촌#경의","서울역"]]},{"id":"A","name":"공항철도","short":"공항","color":"#0090D2","segs":[["서울역","공덕","홍대입구","디지털미디어시티","마곡나루","김포공항","계양","검암","청라국제도시","영종","운서","공항화물청사","인천공항1터미널","인천공항2터미널"]]},{"id":"G","name":"경춘선","short":"경춘","color":"#0C8E72","segs":[["상봉","망우","신내","갈매","별내","퇴계원","사릉","금곡","평내호평","천마산","마석","대성리","청평","상천","가평","굴봉산","백양리","강촌","김유정","남춘천","춘천"]]},{"id":"B","name":"수인·분당선","short":"수인분당","color":"#FABE00","segs":[["청량리","왕십리","서울숲","압구정로데오","강남구청","선정릉","선릉","한티","도곡","구룡","개포동","대모산입구","수서","복정","가천대","태평","모란","야탑","이매","서현","수내","정자","미금","오리","죽전","보정","구성","신갈","기흥","상갈","청명","영통","망포","매탄권선","수원시청","매교","수원","고색","오목천","어천","야목","사리","한대앞","중앙","고잔","초지","안산","신길온천","정왕","오이도","달월","월곶","소래포구","인천논현","호구포","남동인더스파크","원인재","연수","송도","인하대","숭의","신포","인천"]]},{"id":"D","name":"신분당선","short":"신분당","color":"#D4003B","segs":[["신사","논현","신논현","강남","양재","양재시민의숲","청계산입구","판교","정자","미금","동천","수지구청","성복","상현","광교중앙","광교"]]},{"id":"UI","name":"우이신설선","short":"우이","color":"#B0CE18","segs":[["북한산우이","솔밭공원","4.19민주묘지","가오리","화계","삼양","삼양사거리","솔샘","북한산보국문","정릉","성신여대입구","보문","신설동"]]},{"id":"SL","name":"신림선","short":"신림","color":"#6789CA","segs":[["샛강","대방","서울지방병무청","보라매","보라매공원","보라매병원","당곡","신림","서원","서울대벤처타운","관악산"]]},{"id":"WS","name":"서해선","short":"서해","color":"#8FC31F","segs":[["일산","풍산","백마","곡산","대곡","능곡","김포공항","원종","부천종합운동장","소사","소새울","시흥대야","신천","신현","시흥시청","시흥능곡","달미","선부","초지","원곡","원시"]]},{"id":"GG","name":"김포골드라인","short":"김포","color":"#A17800","segs":[["양촌","구래","마산","장기","운양","걸포북변","사우","풍무","고촌","김포공항"]]}],"geo":{"연천":[38.10073,127.07372],"전곡":[38.02458,127.0718],"청산":[37.98172,127.06912],"소요산":[37.9481,127.06103],"동두천":[37.92788,127.05479],"보산":[37.9137,127.05728],"동두천중앙":[37.90189,127.05648],"지행":[37.89233,127.05572],"덕정":[37.84319,127.06128],"덕계":[37.81849,127.05649],"양주":[37.77438,127.04471],"녹양":[37.75938,127.04229],"가능":[37.74858,127.04421],"의정부":[37.73842,127.04596],"회룡":[37.72442,127.04736],"망월사":[37.70991,127.04745],"도봉산":[37.68953,127.04605],"도봉":[37.67956,127.0456],"방학":[37.6675,127.04427],"창동":[37.65309,127.04727],"녹천":[37.6448,127.05127],"월계":[37.63321,127.05883],"광운대":[37.62363,127.06184],"석계":[37.61453,127.06593],"신이문":[37.60185,127.06732],"외대앞":[37.59607,127.06355],"회기":[37.58946,127.05758],"청량리":[37.58036,127.04644],"제기동":[37.5781,127.03489],"신설동":[37.57605,127.02463],"동묘앞":[37.5732,127.01648],"동대문":[37.57169,127.01093],"종로5가":[37.57093,127.00185],"종로3가":[37.57041,126.99185],"종각":[37.57016,126.98292],"시청":[37.56571,126.97709],"서울역":[37.55528,126.97163],"남영":[37.54102,126.9713],"용산":[37.52985,126.96456],"노량진":[37.51415,126.94271],"대방":[37.51334,126.92638],"신길":[37.51686,126.91787],"영등포":[37.5155,126.90763],"신도림":[37.50879,126.89114],"구로":[37.50304,126.88197],"구일":[37.49676,126.87079],"개봉":[37.49459,126.85968],"오류동":[37.49453,126.84537],"온수":[37.49243,126.82409],"역곡":[37.48518,126.8115],"소사":[37.48275,126.79544],"부천":[37.48405,126.78269],"중동":[37.48656,126.76484],"송내":[37.4876,126.75366],"부개":[37.48842,126.74109],"부평":[37.48945,126.72451],"백운":[37.48366,126.7077],"동암":[37.47141,126.7029],"간석":[37.46474,126.69418],"주안":[37.46505,126.67974],"도화":[37.46607,126.66867],"제물포":[37.46677,126.65667],"도원":[37.46845,126.64271],"동인천":[37.47528,126.6328],"인천":[37.47608,126.6168],"가산디지털단지":[37.48158,126.88258],"독산":[37.46661,126.88925],"금천구청":[37.45563,126.89398],"석수":[37.43505,126.90229],"관악":[37.41923,126.90871],"안양":[37.40159,126.92287],"명학":[37.38465,126.93543],"금정":[37.37222,126.94343],"군포":[37.35356,126.94846],"당정":[37.34428,126.94835],"의왕":[37.32085,126.94822],"성균관대":[37.30035,126.97075],"화서":[37.28386,126.98963],"수원":[37.26635,126.99956],"세류":[37.24502,127.01322],"병점":[37.2075,127.03273],"세마":[37.18753,127.04318],"오산대":[37.16895,127.0632],"오산":[37.14588,127.06672],"진위":[37.10945,127.06228],"송탄":[37.0757,127.0543],"서정리":[37.0565,127.05282],"지제":[37.0188,127.07044],"평택":[36.99073,127.08516],"성환":[36.91608,127.12696],"직산":[36.87059,127.1439],"두정":[36.83371,127.14896],"천안":[36.81,127.14683],"봉명":[36.80121,127.13576],"쌍용":[36.79376,127.1214],"아산":[36.79205,127.10436],"탕정":[36.78866,127.08485],"배방":[36.77763,127.05299],"온양온천":[36.78048,127.00325],"신창":[36.7695,126.95111],"광명":[37.41618,126.88447],"서동탄":[37.1955,127.05167],"을지로입구":[37.56601,126.98262],"을지로3가":[37.56631,126.9917],"을지로4가":[37.56659,126.99782],"동대문역사문화공원":[37.56561,127.00905],"신당":[37.56564,127.01961],"상왕십리":[37.56435,127.02935],"왕십리":[37.56124,127.03695],"한양대":[37.55527,127.04366],"뚝섬":[37.54718,127.04737],"성수":[37.54458,127.05596],"건대입구":[37.54037,127.06919],"구의":[37.53708,127.08592],"강변":[37.53509,127.09468],"잠실나루":[37.52073,127.10379],"잠실":[37.51326,127.10016],"잠실새내":[37.51169,127.08616],"종합운동장":[37.51102,127.0737],"삼성":[37.50884,127.06316],"선릉":[37.50429,127.0482],"역삼":[37.50062,127.03646],"강남":[37.49799,127.02791],"교대":[37.49396,127.01467],"서초":[37.4919,127.00792],"방배":[37.48143,126.9976],"사당":[37.47654,126.98154],"낙성대":[37.47693,126.96369],"서울대입구":[37.48125,126.95274],"봉천":[37.48236,126.94189],"신림":[37.4842,126.92972],"신대방":[37.48746,126.91315],"구로디지털단지":[37.48527,126.9014],"대림":[37.49324,126.89493],"문래":[37.51793,126.89476],"영등포구청":[37.52571,126.89661],"당산":[37.53495,126.90277],"합정":[37.54946,126.91381],"홍대입구":[37.55679,126.92371],"신촌":[37.55513,126.93693],"이대":[37.55673,126.94601],"아현":[37.55734,126.95614],"충정로":[37.5597,126.96438],"용답":[37.5619,127.0509],"신답":[37.57004,127.04648],"용두":[37.57403,127.03809],"도림천":[37.51429,126.88277],"양천구청":[37.5124,126.86582],"신정네거리":[37.52007,126.85291],"까치산":[37.53177,126.84668],"대화":[37.67609,126.74757],"주엽":[37.67007,126.76133],"정발산":[37.65948,126.77336],"마두":[37.65221,126.77762],"백석":[37.64311,126.78787],"대곡":[37.63163,126.81102],"화정":[37.63459,126.83265],"원당":[37.65332,126.84304],"원흥":[37.65066,126.87264],"삼송":[37.65308,126.89556],"지축":[37.64803,126.91394],"구파발":[37.63676,126.91882],"연신내":[37.61923,126.92104],"불광":[37.61055,126.92982],"녹번":[37.60093,126.93576],"홍제":[37.58907,126.94374],"무악재":[37.5823,126.95029],"독립문":[37.57457,126.95775],"경복궁":[37.57576,126.97353],"안국":[37.57648,126.98544],"충무로":[37.56143,126.99407],"동대입구":[37.55905,127.0056],"약수":[37.55487,127.01054],"금호":[37.54803,127.01587],"옥수":[37.54168,127.01727],"압구정":[37.52707,127.02846],"신사":[37.51633,127.02011],"잠원":[37.51276,127.01122],"고속터미널":[37.50489,127.00492],"남부터미널":[37.48501,127.01619],"양재":[37.48448,127.0339],"매봉":[37.48695,127.04677],"도곡":[37.49092,127.05545],"대치":[37.49461,127.06364],"학여울":[37.49666,127.07059],"대청":[37.49351,127.07953],"일원":[37.48368,127.08439],"수서":[37.48738,127.10191],"가락시장":[37.49224,127.11776],"경찰병원":[37.49592,127.12454],"오금":[37.50213,127.12832],"진접":[37.7205,127.2034],"오남":[37.705,127.19281],"별내별가람":[37.66778,127.11581],"불암산":[37.67027,127.07907],"상계":[37.66088,127.07357],"노원":[37.65627,127.06328],"쌍문":[37.64863,127.03471],"수유":[37.63805,127.02573],"미아":[37.62667,127.02598],"미아사거리":[37.61329,127.03005],"길음":[37.60341,127.02505],"성신여대입구":[37.59261,127.01644],"한성대입구":[37.58846,127.00622],"혜화":[37.58234,127.00184],"명동":[37.56099,126.98632],"회현":[37.55851,126.97825],"숙대입구":[37.54456,126.97211],"삼각지":[37.53408,126.9726],"신용산":[37.52917,126.96789],"이촌":[37.52229,126.97473],"동작":[37.50285,126.98035],"총신대입구(이수)":[37.48626,126.98199],"남태령":[37.46387,126.98913],"선바위":[37.45167,127.0023],"경마공원":[37.44389,127.00789],"대공원":[37.43568,127.00652],"과천":[37.43302,126.99657],"정부과천청사":[37.42651,126.98978],"인덕원":[37.40155,126.97671],"평촌":[37.39429,126.96388],"범계":[37.38979,126.95081],"산본":[37.3581,126.93327],"수리산":[37.3498,126.92536],"대야미":[37.32847,126.91733],"반월":[37.31221,126.90352],"상록수":[37.3028,126.86649],"한대앞":[37.30969,126.85344],"중앙":[37.31594,126.83857],"고잔":[37.31678,126.82314],"초지":[37.32065,126.80591],"안산":[37.32708,126.78853],"신길온천":[37.33821,126.76584],"정왕":[37.35173,126.74299],"오이도":[37.36236,126.73871],"방화":[37.57745,126.81274],"개화산":[37.5724,126.80617],"김포공항":[37.56238,126.80129],"송정":[37.56118,126.81197],"마곡":[37.56018,126.82545],"발산":[37.5586,126.83767],"우장산":[37.54877,126.83632],"화곡":[37.54151,126.84046],"신정":[37.525,126.85619],"목동":[37.52607,126.86493],"오목교":[37.5245,126.87518],"양평":[37.52557,126.88613],"영등포시장":[37.52267,126.90514],"여의도":[37.52175,126.92436],"여의나루":[37.5271,126.9329],"마포":[37.53957,126.94593],"공덕":[37.54443,126.95137],"애오개":[37.55374,126.95682],"서대문":[37.56577,126.96664],"광화문":[37.57153,126.97717],"청구":[37.56028,127.01364],"신금호":[37.55455,127.02033],"행당":[37.55732,127.02948],"마장":[37.5661,127.04297],"답십리":[37.56675,127.0527],"장한평":[37.56144,127.06462],"군자":[37.55709,127.07958],"아차산":[37.55169,127.08976],"광나루":[37.5453,127.10357],"천호":[37.53864,127.12331],"강동":[37.5358,127.13248],"길동":[37.5378,127.14],"굽은다리":[37.54548,127.14285],"명일":[37.55137,127.144],"고덕":[37.555,127.15415],"상일동":[37.55671,127.16642],"강일":[37.55749,127.17593],"미사":[37.56093,127.19388],"하남풍산":[37.55203,127.20386],"하남시청":[37.54205,127.20612],"하남검단산":[37.53972,127.22345],"둔촌동":[37.52779,127.13625],"올림픽공원":[37.5162,127.13092],"방이":[37.50886,127.12613],"개롱":[37.49808,127.13482],"거여":[37.4931,127.14415],"마천":[37.49499,127.15278],"응암":[37.5986,126.91558],"역촌":[37.60602,126.92274],"독바위":[37.61846,126.93303],"구산":[37.61138,126.91727],"새절":[37.59115,126.91363],"증산":[37.58388,126.90964],"디지털미디어시티":[37.57611,126.90139],"월드컵경기장":[37.56953,126.8993],"마포구청":[37.56352,126.90334],"망원":[37.55609,126.91005],"상수":[37.54772,126.92285],"광흥창":[37.54746,126.93199],"대흥":[37.54777,126.94207],"효창공원앞":[37.53923,126.96138],"녹사평":[37.53468,126.98669],"이태원":[37.53449,126.9943],"한강진":[37.53963,127.00172],"버티고개":[37.54801,127.00705],"창신":[37.57966,127.01524],"보문":[37.58527,127.01935],"안암":[37.58627,127.029],"고려대":[37.59051,127.0363],"월곡":[37.60195,127.04152],"상월곡":[37.60638,127.04849],"돌곶이":[37.61054,127.05643],"태릉입구":[37.61734,127.07474],"화랑대":[37.62006,127.08469],"봉화산":[37.61728,127.0914],"신내":[37.61317,127.10223],"장암":[37.70011,127.0532],"수락산":[37.67785,127.05531],"마들":[37.66494,127.05768],"중계":[37.64458,127.0643],"하계":[37.63635,127.06799],"공릉":[37.62574,127.0729],"먹골":[37.61064,127.07773],"중화":[37.60254,127.07926],"상봉":[37.59558,127.08572],"면목":[37.58858,127.0875],"사가정":[37.58089,127.08848],"용마산":[37.57365,127.08673],"중곡":[37.56592,127.08432],"어린이대공원":[37.54801,127.07466],"뚝섬유원지":[37.53154,127.0667],"청담":[37.51937,127.05335],"강남구청":[37.51718,127.04126],"학동":[37.51423,127.03166],"논현":[37.51109,127.02142],"반포":[37.50818,127.01173],"내방":[37.48762,126.99351],"남성":[37.4846,126.97125],"숭실대입구":[37.49603,126.95382],"상도":[37.50283,126.94791],"장승배기":[37.5049,126.93915],"신대방삼거리":[37.4997,126.92828],"보라매":[37.49987,126.92043],"신풍":[37.50008,126.90993],"남구로":[37.48606,126.88725],"철산":[37.47605,126.86791],"광명사거리":[37.47925,126.85488],"천왕":[37.48664,126.83871],"까치울":[37.50617,126.81093],"부천종합운동장":[37.5052,126.79697],"춘의":[37.50366,126.78766],"신중동":[37.50293,126.77581],"부천시청":[37.50454,126.76359],"상동":[37.5058,126.75312],"삼산체육관":[37.50683,126.74197],"굴포천":[37.5069,126.73181],"부평구청":[37.50794,126.72118],"산곡":[37.5086,126.70353],"석남":[37.50623,126.67628],"별내":[37.64232,127.1276],"다산":[37.62429,127.14973],"동구릉":[37.61105,127.13793],"구리":[37.60262,127.1407],"장자호수공원":[37.58738,127.13794],"암사역사공원":[37.55695,127.13702],"암사":[37.55021,127.12756],"강동구청":[37.53034,127.12051],"몽촌토성":[37.51741,127.11236],"석촌":[37.50556,127.10683],"송파":[37.4997,127.11218],"문정":[37.48586,127.1225],"장지":[37.4787,127.12619],"복정":[37.47105,127.12673],"남위례":[37.4624,127.13977],"산성":[37.45712,127.14991],"남한산성입구":[37.45153,127.15982],"단대오거리":[37.44521,127.15687],"신흥":[37.44092,127.14756],"수진":[37.43743,127.14072],"모란":[37.43382,127.12984],"개화":[37.57861,126.79815],"공항시장":[37.56373,126.81068],"신방화":[37.56753,126.8166],"마곡나루":[37.56678,126.82731],"양천향교":[37.56838,126.84133],"가양":[37.56139,126.85446],"증미":[37.5574,126.86194],"등촌":[37.55063,126.86569],"염창":[37.54694,126.87492],"신목동":[37.54428,126.88308],"선유도":[37.53802,126.89352],"국회의사당":[37.5281,126.91787],"샛강":[37.51727,126.92842],"노들":[37.51289,126.95322],"흑석":[37.50877,126.96371],"구반포":[37.50136,126.98733],"신반포":[37.50341,126.99592],"사평":[37.50421,127.01526],"신논현":[37.5046,127.02506],"언주":[37.50729,127.03387],"선정릉":[37.5103,127.044],"삼성중앙":[37.51301,127.05328],"봉은사":[37.51422,127.06024],"삼전":[37.50474,127.08803],"석촌고분":[37.50256,127.09703],"송파나루":[37.51037,127.11222],"한성백제":[37.5164,127.1165],"둔촌오륜":[37.51968,127.13799],"중앙보훈병원":[37.52919,127.14874],"임진강":[37.88842,126.74676],"운천":[37.87994,126.77],"문산":[37.85462,126.78805],"파주":[37.8153,126.79278],"월롱":[37.79619,126.79259],"금촌":[37.76622,126.77464],"금릉":[37.75132,126.76535],"운정":[37.72583,126.76726],"야당":[37.71233,126.76136],"탄현":[37.69402,126.76109],"일산":[37.68208,126.76985],"풍산":[37.67235,126.78624],"백마":[37.65824,126.79446],"곡산":[37.64568,126.80176],"능곡":[37.61881,126.82078],"행신":[37.6121,126.83415],"강매":[37.61231,126.84322],"화전":[37.60289,126.86839],"수색":[37.58084,126.89561],"가좌":[37.56849,126.91549],"서강대":[37.55188,126.93571],"서빙고":[37.51959,126.98854],"한남":[37.52943,127.00917],"응봉":[37.54995,127.03454],"중랑":[37.59492,127.07612],"망우":[37.59955,127.09191],"양원":[37.6066,127.10791],"도농":[37.60881,127.16115],"양정":[37.60533,127.19364],"덕소":[37.58678,127.20883],"도심":[37.57962,127.22267],"팔당":[37.54737,127.24394],"운길산":[37.55467,127.31011],"양수":[37.54598,127.3291],"신원":[37.52555,127.37292],"국수":[37.51617,127.39937],"아신":[37.51382,127.44317],"오빈":[37.50606,127.47387],"양평#중앙":[37.49277,127.49184],"원덕":[37.46867,127.54708],"용문":[37.48223,127.59465],"지평":[37.47639,127.62987],"신촌#경의":[37.55973,126.9426],"계양":[37.57166,126.7363],"검암":[37.5691,126.67401],"청라국제도시":[37.55641,126.62465],"영종":[37.51202,126.52425],"운서":[37.4929,126.49379],"공항화물청사":[37.45904,126.47752],"인천공항1터미널":[37.44746,126.45251],"인천공항2터미널":[37.4607,126.44144],"갈매":[37.63412,127.11476],"퇴계원":[37.64831,127.14395],"사릉":[37.65108,127.17693],"금곡":[37.63738,127.20785],"평내호평":[37.65322,127.24449],"천마산":[37.65898,127.28538],"마석":[37.65278,127.31177],"대성리":[37.68407,127.37932],"청평":[37.73549,127.42661],"상천":[37.77025,127.45482],"가평":[37.81454,127.51074],"굴봉산":[37.83207,127.55769],"백양리":[37.83078,127.58933],"강촌":[37.80572,127.63415],"김유정":[37.81847,127.71434],"남춘천":[37.86401,127.72379],"춘천":[37.88505,127.71702],"서울숲":[37.54362,127.04471],"압구정로데오":[37.52738,127.04053],"한티":[37.49624,127.05287],"구룡":[37.48684,127.05886],"개포동":[37.48912,127.06614],"대모산입구":[37.49137,127.07272],"가천대":[37.44861,127.1267],"태평":[37.44002,127.12771],"야탑":[37.41119,127.12871],"이매":[37.39537,127.12825],"서현":[37.38513,127.12359],"수내":[37.37846,127.11432],"정자":[37.36599,127.10807],"미금":[37.35008,127.10891],"오리":[37.33982,127.10894],"죽전":[37.32475,127.10739],"보정":[37.31275,127.1082],"구성":[37.29897,127.10566],"신갈":[37.2861,127.11131],"기흥":[37.27506,127.11591],"상갈":[37.26181,127.10885],"청명":[37.25949,127.07893],"영통":[37.25157,127.07139],"망포":[37.2458,127.05735],"매탄권선":[37.25276,127.04057],"수원시청":[37.26191,127.03074],"매교":[37.26548,127.01568],"고색":[37.24963,126.98025],"오목천":[37.24304,126.96368],"어천":[37.2501,126.90879],"야목":[37.26418,126.87948],"사리":[37.28998,126.85685],"달월":[37.37968,126.74518],"월곶":[37.39177,126.7427],"소래포구":[37.40095,126.73352],"인천논현":[37.40061,126.72248],"호구포":[37.40164,126.70863],"남동인더스파크":[37.40772,126.69522],"원인재":[37.41305,126.68665],"연수":[37.4178,126.67894],"송도":[37.42851,126.65777],"인하대":[37.44849,126.64962],"숭의":[37.46079,126.6383],"신포":[37.46874,126.62385],"양재시민의숲":[37.47002,127.03842],"청계산입구":[37.44721,127.05566],"판교":[37.39476,127.11222],"동천":[37.33793,127.10298],"수지구청":[37.3227,127.09503],"성복":[37.31334,127.0801],"상현":[37.29766,127.06934],"광교중앙":[37.28862,127.05148],"광교":[37.30211,127.04448],"북한산우이":[37.66291,127.01271],"솔밭공원":[37.65603,127.01327],"4.19민주묘지":[37.6495,127.01368],"가오리":[37.64154,127.01679],"화계":[37.63413,127.01751],"삼양":[37.62691,127.01811],"삼양사거리":[37.62134,127.02047],"솔샘":[37.62024,127.01363],"북한산보국문":[37.61207,127.00825],"정릉":[37.60313,127.0134],"서울지방병무청":[37.50605,126.92271],"보라매공원":[37.49557,126.91808],"보라매병원":[37.49296,126.9235],"당곡":[37.4903,126.92751],"서원":[37.47823,126.93304],"서울대벤처타운":[37.472,126.93394],"관악산":[37.4691,126.94506],"원종":[37.5239,126.8049],"소새울":[37.46847,126.79725],"시흥대야":[37.45014,126.79304],"신천":[37.43907,126.78679],"신현":[37.40901,126.78802],"시흥시청":[37.38222,126.80563],"시흥능곡":[37.36986,126.80857],"달미":[37.34885,126.80941],"선부":[37.33435,126.8099],"원곡":[37.31321,126.79626],"원시":[37.30237,126.78669],"양촌":[37.64238,126.61431],"구래":[37.64538,126.62863],"마산":[37.64073,126.64434],"장기":[37.64399,126.66902],"운양":[37.65387,126.68393],"걸포북변":[37.63165,126.70597],"사우":[37.62025,126.71973],"풍무":[37.61249,126.73239],"고촌":[37.60124,126.77035]},"facts":{"서울역":"1900년 남대문정거장으로 문을 열었고, 1925년에 지은 옛 역사는 지금 문화공간 '문화역서울 284'로 쓰입니다.","시청":"1974년 8월 15일 개통한 1호선 첫 구간(서울역–청량리)의 역입니다.","강남":"서울 지하철에서 하루 승하차 인원이 가장 많은 역 중 하나입니다.","잠실":"롯데월드와 롯데월드타워가 바로 연결되는 2·8호선 환승역입니다.","홍대입구":"2호선·공항철도·경의중앙선이 만나는 서울 서부의 대표 환승역입니다.","동대문역사문화공원":"2·4·5호선이 만나며, 동대문디자인플라자(DDP)와 이어집니다.","김포공항":"5호선·9호선·공항철도·김포골드라인·서해선, 다섯 노선이 만나는 역입니다.","인천공항2터미널":"공항철도의 종점. 서울역에서 직통열차로 약 50분 걸립니다.","연천":"1호선의 북쪽 끝. 2023년 12월 소요산–연천 구간이 이어지며 새 종점이 됐습니다.","신창":"1호선의 남쪽 끝 역으로, 순천향대학교가 가깝습니다.","종로3가":"1·3·5호선이 만나는 환승역. 탑골공원과 종묘가 걸어서 몇 분 거리입니다.","왕십리":"2호선·5호선·경의중앙선·수인분당선, 네 노선이 만나는 환승역입니다.","고속터미널":"3·7·9호선이 만나며 서울고속버스터미널과 바로 이어집니다.","경복궁":"역 출구가 경복궁 바로 앞으로 나 있습니다.","디지털미디어시티":"6호선·공항철도·경의중앙선이 만나는 상암 방송가의 관문입니다.","춘천":"경춘선의 종점. 청량리·상봉에서 ITX 없이 전철로만 닿을 수 있습니다.","북한산우이":"우이신설선의 종점이자 북한산 등산로 입구입니다.","성수":"2호선 본선과 성수지선(성수–신설동)이 갈라지는 역입니다.","신도림":"1호선과 2호선이 만나고, 2호선 신정지선(신도림–까치산)이 시작되는 역입니다.","까치산":"2호선 신정지선의 종점이자 5호선 환승역입니다.","응암":"6호선 응암–역촌–불광–독바위–연신내–구산 구간은 한 방향으로만 도는 '응암순환' 구간입니다.","신설동":"1호선·2호선(성수지선)·우이신설선이 만나는 역입니다.","여의나루":"여의도 한강공원과 바로 이어지는 5호선 역입니다.","오이도":"4호선과 수인분당선이 함께 서는 역. 바다 쪽으로 오이도 빨강등대가 있습니다.","공덕":"5·6호선·경의중앙선·공항철도, 네 노선이 만나는 환승역입니다.","서울대입구":"서울대학교로 가는 버스가 많이 출발하는 2호선 역입니다.","온수":"1호선과 7호선이 만나는 서울 서남쪽 끝의 환승역입니다.","청량리":"1호선·경의중앙선·수인분당선·경춘선 열차가 모이는 서울 동북부의 철도 관문입니다."},"start":"시청"};
+/* SEOUL-DATA:END */
+
+/* 오사카: tools/build_osaka.py가 만들어 넣는 데이터 (직접 고치지 마세요) */
+/* OSAKA-DATA:BEGIN */
+const OSAKA_DATA = {"lines":[{"id":"11602","name":"JR 교토선","short":"A","color":"#0072BC","segs":[["京都","西大路","桂川","向日町","長岡京","山崎","島本","高槻","摂津富田","JR総持寺","茨木","千里丘","岸辺","吹田","東淀川","新大阪","大阪"]]},{"id":"11603","name":"JR 고베선","short":"A","color":"#0072BC","segs":[["大阪","塚本","尼崎","立花","甲子園口","西宮","さくら夙川","芦屋","甲南山手","摂津本山","住吉#2","六甲道","摩耶","灘","三ノ宮","元町","神戸"]]},{"id":"11607","name":"JR 야마토지선","short":"Q","color":"#00B17B","segs":[["加茂","木津","平城山","奈良","郡山","大和小泉","法隆寺","王寺","三郷","河内堅上","高井田","柏原","志紀","八尾","久宝寺","加美","平野","東部市場前","天王寺","新今宮","今宮","JR難波"]]},{"id":"11617","name":"JR 가쿠겐토시선","short":"H","color":"#FF1493","segs":[["木津","西木津","祝園","下狛","JR三山木","同志社前","京田辺","大住","松井山手","長尾","藤阪","津田","河内磐船","星田","寝屋川公園","忍ヶ丘","四条畷","野崎","住道","鴻池新田","徳庵","放出","鴫野","京橋"]]},{"id":"11623","name":"JR 오사카순환선","short":"O","color":"#E80000","segs":[["天王寺","新今宮","今宮","芦原橋","大正","弁天町","西九条","野田","福島","大阪","天満","桜ノ宮","京橋","大阪城公園","森ノ宮","玉造","鶴橋","桃谷","寺田町","天王寺"]]},{"id":"11624","name":"JR 유메사키선","short":"P","color":"#0A318E","segs":[["西九条","安治川口","ユニバーサルシティ","桜島"]]},{"id":"11625","name":"JR 도자이선","short":"H","color":"#FF1493","segs":[["京橋","大阪城北詰","大阪天満宮","北新地","新福島","海老江","御幣島","加島","尼崎"]]},{"id":"11626","name":"JR 한와선","short":"R","color":"#FF6600","segs":[["天王寺","美章園","南田辺","鶴ヶ丘","長居","我孫子町","杉本町","浅香","堺市","三国ヶ丘","百舌鳥","上野芝","津久野","鳳","富木","北信太","信太山","和泉府中","久米田","下松","東岸和田","東貝塚","和泉橋本","東佐野","熊取","日根野","長滝","新家","和泉砂川","和泉鳥取","山中渓","紀伊","六十谷","紀伊中ノ島","和歌山"]]},{"id":"11627","name":"JR 하고로모선","short":"R","color":"#FF6600","segs":[["鳳","東羽衣"]]},{"id":"11628","name":"JR 간사이공항선","short":"S","color":"#0072BC","segs":[["日根野","りんくうタウン","関西空港"]]},{"id":"11629","name":"JR 다카라즈카선","short":"G","color":"#FFBA00","segs":[["大阪","塚本","尼崎","塚口","猪名寺","伊丹","北伊丹","川西池田","中山寺","宝塚","生瀬","西宮名塩","武田尾","道場","三田","新三田","広野","相野","藍本","草野","古市#2","南矢代","篠山口"]]},{"id":"11641","name":"JR 오사카히가시선","short":"F","color":"#347293","segs":[["大阪","新大阪","南吹田","JR淡路","城北公園通","JR野江","鴫野","放出","高井田中央","JR河内永和","JR俊徳道","JR長瀬","衣摺加美北","新加美","久宝寺"]]},{"id":"31001","name":"긴테쓰 난바선","short":"A","color":"#FF0000","segs":[["大阪難波","近鉄日本橋","大阪上本町"]]},{"id":"31003","name":"긴테쓰 미나미오사카선","short":"F","color":"#006400","segs":[["大阪阿部野橋","河堀口","北田辺","今川","針中野","矢田","河内天美","布忍","高見ノ里","河内松原","恵我ノ荘","高鷲","藤井寺","土師ノ里","道明寺","古市","駒ヶ谷","上ノ太子","二上山","二上神社口","当麻寺","磐城","尺土","高田市","浮孔","坊城","橿原神宮西口","橿原神宮前"]]},{"id":"31005","name":"긴테쓰 오사카선","short":"D","color":"#77BBFF","segs":[["大阪上本町","鶴橋","今里","布施","俊徳道","長瀬","弥刀","久宝寺口","近鉄八尾","河内山本","高安","恩智","法善寺","堅下","安堂","河内国分","大阪教育大前","関屋","二上","近鉄下田","五位堂","築山","大和高田","松塚","真菅","大和八木","耳成","大福","桜井#2","大和朝倉","長谷寺","榛原","室生口大野","三本松"]]},{"id":"31012","name":"긴테쓰 도묘지선","short":"N","color":"#006400","segs":[["道明寺","柏原南口","柏原"]]},{"id":"31020","name":"긴테쓰 나라선","short":"A","color":"#FF0000","segs":[["布施","河内永和","河内小阪","八戸ノ里","若江岩田","河内花園","東花園","瓢箪山","枚岡","額田","石切","生駒","東生駒","富雄","学園前","菖蒲池","大和西大寺","新大宮","近鉄奈良"]]},{"id":"31021","name":"긴테쓰 시기선","short":"J","color":"#77BBFF","segs":[["河内山本","服部川","信貴山口"]]},{"id":"31022","name":"긴테쓰 나가노선","short":"O","color":"#006400","segs":[["古市","喜志","富田林","富田林西口","川西","滝谷不動","汐ノ宮","河内長野"]]},{"id":"31023","name":"긴테쓰 게이한나선","short":"C","color":"#228B22","segs":[["長田","荒本","吉田","新石切","生駒","白庭台","学研北生駒","学研奈良登美ヶ丘"]]},{"id":"31024","name":"긴테쓰 니시시기 케이블","short":"Z","color":"#F0E68C","segs":[["信貴山口","高安山"]]},{"id":"32001","name":"난카이 본선","short":"NK","color":"#0065AF","segs":[["難波","新今宮","天下茶屋","岸里玉出","粉浜","住吉大社","住ノ江","七道","堺","湊","石津川","諏訪ノ森","浜寺公園","羽衣","高石","北助松","松ノ浜","泉大津","忠岡","春木","和泉大宮","岸和田","蛸地蔵","貝塚","二色浜","鶴原","井原里","泉佐野","羽倉崎","吉見ノ里","岡田浦","樽井","尾崎","鳥取ノ荘","箱作","淡輪","みさき公園","孝子","和歌山大学前","紀ノ川","和歌山市"]]},{"id":"32002","name":"난카이 공항선","short":"NK","color":"#594BAC","segs":[["泉佐野","りんくうタウン","関西空港"]]},{"id":"32004","name":"난카이 다카시노하마선","short":"NK","color":"#0065AF","segs":[["羽衣","伽羅橋","高師浜"]]},{"id":"32006","name":"난카이 다나가와선","short":"NK","color":"#0065AF","segs":[["みさき公園","深日町","深日港","多奈川"]]},{"id":"32007","name":"난카이 고야선","short":"NK","color":"#009A41","segs":[["難波","今宮戎","新今宮","萩ノ茶屋","天下茶屋","岸里玉出","帝塚山","住吉東","沢ノ町","我孫子前","浅香山","堺東","三国ヶ丘","百舌鳥八幡","中百舌鳥","白鷺","初芝","萩原天神","北野田","狭山","大阪狭山市","金剛","滝谷","千代田","河内長野","三日市町","美加の台","千早口","天見","紀見峠","林間田園都市","御幸辻","橋本","紀伊清水","学文路","九度山","高野下","下古沢","上古沢","紀伊細川","紀伊神谷","極楽橋"]]},{"id":"32009","name":"난카이 시오미바시선","short":"NK","color":"#009A41","segs":[["汐見橋","芦原町","木津川","津守","西天下茶屋","岸里玉出"]]},{"id":"32010","name":"난카이 센보쿠선","short":"NK","color":"#B1BC3A","segs":[["中百舌鳥","深井","泉ヶ丘","栂・美木多","光明池","和泉中央"]]},{"id":"33001","name":"게이한 본선","short":"KH","color":"#66CC33","segs":[["出町柳","神宮丸太町","三条","祇園四条","清水五条","七条","東福寺","鳥羽街道","伏見稲荷","龍谷大前深草","藤森","墨染","丹波橋","伏見桃山","中書島","淀","石清水八幡宮","橋本#2","樟葉","牧野","御殿山","枚方市","枚方公園","光善寺","香里園","寝屋川市","萱島","大和田","古川橋","門真市","西三荘","守口市","土居","滝井","千林","森小路","関目","野江","京橋","天満橋","北浜","淀屋橋"]]},{"id":"33003","name":"게이한 가타노선","short":"KH","color":"#66CC33","segs":[["枚方市","宮之阪","星ヶ丘","村野","郡津","交野市","河内森","私市"]]},{"id":"33008","name":"게이한 나카노시마선","short":"KH","color":"#66CC33","segs":[["天満橋","なにわ橋","大江橋","渡辺橋","中之島"]]},{"id":"34001","name":"한큐 고베선","short":"HK","color":"#0000FF","segs":[["大阪梅田","中津","十三","神崎川","園田","塚口#2","武庫之荘","西宮北口","夙川","芦屋川","岡本","御影","六甲","王子公園","春日野道","三宮"]]},{"id":"34002","name":"한큐 다카라즈카선","short":"HK","color":"#FFA500","segs":[["大阪梅田","中津","十三","三国","庄内","服部天神","曽根","岡町","豊中","蛍池","石橋阪大前","池田","川西能勢口","雲雀丘花屋敷","山本","中山観音","売布神社","清荒神","宝塚"]]},{"id":"34003","name":"한큐 교토선","short":"HK","color":"#32CD32","segs":[["京都河原町","烏丸","大宮","西院","西京極","桂","洛西口","東向日","西向日","長岡天神","西山天王山","大山崎","水無瀬","上牧","高槻市","富田","総持寺","茨木市","南茨木","摂津市","正雀","相川","上新庄","淡路","崇禅寺","南方","十三","大阪梅田"]]},{"id":"34007","name":"한큐 미노오선","short":"HK","color":"#FFA500","segs":[["石橋阪大前","桜井","牧落","箕面"]]},{"id":"34008","name":"한큐 센리선","short":"HK","color":"#32CD32","segs":[["北千里","山田","南千里","千里山","関大前","豊津","吹田","下新庄","淡路","柴島","天神橋筋六丁目"]]},{"id":"35001","name":"한신 본선","short":"HS","color":"#004C9E","segs":[["大阪梅田","福島","野田","淀川","姫島","千船","杭瀬","大物","尼崎#2","出屋敷","尼崎センタープール前","武庫川","鳴尾・武庫川女子大前","甲子園","久寿川","今津","西宮#2","香櫨園","打出","芦屋","深江","青木","魚崎","住吉#2","御影#2","石屋川","新在家","大石","西灘","岩屋","春日野道","三宮","元町"]]},{"id":"35002","name":"한신 난바선","short":"HS","color":"#004C9E","segs":[["大阪難波","桜川","ドーム前","九条","西九条","千鳥橋","伝法","福","出来島","大物","尼崎#2"]]},{"id":"99614","name":"기타오사카큐코선","short":"M","color":"#E5171F","segs":[["箕面萱野","箕面船場阪大前","千里中央","桃山台","緑地公園","江坂"]]},{"id":"99615","name":"노세전철 묘켄선","short":"NS","color":"#800000","segs":[["川西能勢口","絹延橋","滝山","鶯の森","鼓滝","多田","平野#3","一の鳥居","畦野","山下","笹部","光風台","ときわ台","妙見口"]]},{"id":"99617","name":"미즈마철도","short":"MZ","color":"#1E7B4E","segs":[["貝塚","貝塚市役所前","近義の里","石才","清児","名越","森","三ツ松","三ヶ山口","水間観音"]]},{"id":"99618","name":"미도스지선","short":"M","color":"#E5171F","segs":[["江坂","東三国","新大阪","西中島南方","中津","梅田","淀屋橋","本町","心斎橋","なんば","大国町","動物園前","天王寺","昭和町","西田辺","長居","あびこ","北花田","新金岡","なかもず"]]},{"id":"99619","name":"다니마치선","short":"T","color":"#522886","segs":[["大日","守口","太子橋今市","千林大宮","関目高殿","野江内代","都島","天神橋筋六丁目","中崎町","東梅田","南森町","天満橋","谷町四丁目","谷町六丁目","谷町九丁目","四天王寺前夕陽ヶ丘","天王寺","阿倍野","文の里","田辺","駒川中野","平野#2","喜連瓜破","出戸","長原","八尾南"]]},{"id":"99620","name":"요쓰바시선","short":"Y","color":"#0078BA","segs":[["西梅田","肥後橋","本町","四ツ橋","なんば","大国町","花園町","岸里","玉出","北加賀屋","住之江公園"]]},{"id":"99621","name":"주오선","short":"C","color":"#019A66","segs":[["夢洲","コスモスクエア","大阪港","朝潮橋","弁天町","九条","阿波座","本町","堺筋本町","谷町四丁目","森ノ宮","緑橋","深江橋","高井田#2","長田"]]},{"id":"99622","name":"센니치마에선","short":"S","color":"#E44D93","segs":[["野田阪神","玉川","阿波座","西長堀","桜川","なんば","日本橋","谷町九丁目","鶴橋","今里","新深江","小路","北巽","南巽"]]},{"id":"99623","name":"사카이스지선","short":"K","color":"#814721","segs":[["天神橋筋六丁目","扇町","南森町","北浜","堺筋本町","長堀橋","日本橋","恵美須町","動物園前","天下茶屋"]]},{"id":"99624","name":"나가호리쓰루미료쿠치선","short":"N","color":"#A9CC51","segs":[["大正","ドーム前千代崎","西長堀","西大橋","心斎橋","長堀橋","松屋町","谷町六丁目","玉造","森ノ宮","大阪ビジネスパーク","京橋","蒲生四丁目","今福鶴見","横堤","鶴見緑地","門真南"]]},{"id":"99625","name":"난코포트타운선","short":"P","color":"#00A0DE","segs":[["コスモスクエア","トレードセンター前","中ふ頭","ポートタウン西","ポートタウン東","フェリーターミナル","南港東","南港口","平林","住之江公園"]]},{"id":"99626","name":"오사카 모노레일","short":"MO","color":"#111986","segs":[["大阪空港","蛍池","柴原阪大前","少路","千里中央","山田","万博記念公園","宇野辺","南茨木","沢良宜","摂津","南摂津","大日","門真市"]]},{"id":"99627","name":"모노레일 사이토선","short":"MO","color":"#111986","segs":[["万博記念公園","公園東口","阪大病院前","豊川","彩都西"]]},{"id":"99628","name":"한카이 우에마치선","short":"HN","color":"#2E9B4E","segs":[["天王寺駅前","阿倍野","松虫","東天下茶屋","北畠","姫松","帝塚山三丁目","帝塚山四丁目","神ノ木","住吉"]]},{"id":"99629","name":"한카이선","short":"HN","color":"#2E9B4E","segs":[["恵美須町","新今宮駅前","今池","今船","松田町","北天下茶屋","聖天坂","天神ノ森","東玉出","塚西","東粉浜","住吉","住吉鳥居前","細井川","安立町","我孫子道","大和川","高須神社","綾ノ町","神明町","妙国寺前","花田口","大小路","宿院","寺地町","御陵前","東湊","石津北","石津","船尾","浜寺駅前"]]},{"id":"99652","name":"이마자토스지선","short":"I","color":"#EE7B1A","segs":[["井高野","瑞光四丁目","だいどう豊里","太子橋今市","清水","新森古市","関目成育","蒲生四丁目","鴫野","緑橋","今里"]]}],"through":[{"name":"미도스지선·기타오사카큐코 직통","seq":["箕面萱野","箕面船場阪大前","千里中央","桃山台","緑地公園","江坂","東三国","新大阪","西中島南方","中津","梅田","淀屋橋","本町","心斎橋","なんば","大国町","動物園前","天王寺","昭和町","西田辺","長居","あびこ","北花田","新金岡","なかもず"],"lines":["99614","99614","99614","99614","99614","99618","99618","99618","99618","99618","99618","99618","99618","99618","99618","99618","99618","99618","99618","99618","99618","99618","99618","99618"]},{"name":"사카이스지선·한큐 센리선 직통","seq":["北千里","山田","南千里","千里山","関大前","豊津","吹田","下新庄","淡路","柴島","天神橋筋六丁目","扇町","南森町","北浜","堺筋本町","長堀橋","日本橋","恵美須町","動物園前","天下茶屋"],"lines":["34008","34008","34008","34008","34008","34008","34008","34008","34008","34008","99623","99623","99623","99623","99623","99623","99623","99623","99623"]},{"name":"사카이스지선·한큐 교토선 직통","seq":["高槻市","富田","総持寺","茨木市","南茨木","摂津市","正雀","相川","上新庄","淡路","柴島","天神橋筋六丁目","扇町","南森町","北浜","堺筋本町","長堀橋","日本橋","恵美須町","動物園前","天下茶屋"],"lines":["34003","34003","34003","34003","34003","34003","34003","34003","34003","34008","34008","99623","99623","99623","99623","99623","99623","99623","99623","99623"]},{"name":"주오선·긴테쓰 게이한나선 직통","seq":["夢洲","コスモスクエア","大阪港","朝潮橋","弁天町","九条","阿波座","本町","堺筋本町","谷町四丁目","森ノ宮","緑橋","深江橋","高井田#2","長田","荒本","吉田","新石切","生駒","白庭台","学研北生駒","学研奈良登美ヶ丘"],"lines":["99621","99621","99621","99621","99621","99621","99621","99621","99621","99621","99621","99621","99621","99621","31023","31023","31023","31023","31023","31023","31023"]},{"name":"한신·긴테쓰 직통","seq":["三宮","春日野道","岩屋","西灘","大石","新在家","石屋川","御影#2","住吉#2","魚崎","青木","深江","芦屋","打出","香櫨園","西宮#2","今津","久寿川","甲子園","鳴尾・武庫川女子大前","武庫川","尼崎センタープール前","出屋敷","尼崎#2","大物","出来島","福","伝法","千鳥橋","西九条","九条","ドーム前","桜川","大阪難波","近鉄日本橋","大阪上本町","鶴橋","今里","布施","河内永和","河内小阪","八戸ノ里","若江岩田","河内花園","東花園","瓢箪山","枚岡","額田","石切","生駒","東生駒","富雄","学園前","菖蒲池","大和西大寺","新大宮","近鉄奈良"],"lines":["35001","35001","35001","35001","35001","35001","35001","35001","35001","35001","35001","35001","35001","35001","35001","35001","35001","35001","35001","35001","35001","35001","35001","35002","35002","35002","35002","35002","35002","35002","35002","35002","35002","31001","31001","31005","31005","31005","31020","31020","31020","31020","31020","31020","31020","31020","31020","31020","31020","31020","31020","31020","31020","31020","31020","31020"]},{"name":"JR 도자이선·가쿠겐토시선·다카라즈카선 직통","seq":["松井山手","長尾","藤阪","津田","河内磐船","星田","寝屋川公園","忍ヶ丘","四条畷","野崎","住道","鴻池新田","徳庵","放出","鴫野","京橋","大阪城北詰","大阪天満宮","北新地","新福島","海老江","御幣島","加島","尼崎","塚口","猪名寺","伊丹","北伊丹","川西池田","中山寺","宝塚"],"lines":["11617","11617","11617","11617","11617","11617","11617","11617","11617","11617","11617","11617","11617","11617","11617","11625","11625","11625","11625","11625","11625","11625","11625","11629","11629","11629","11629","11629","11629","11629"]},{"name":"JR 도자이선·고베선 직통","seq":["四条畷","野崎","住道","鴻池新田","徳庵","放出","鴫野","京橋","大阪城北詰","大阪天満宮","北新地","新福島","海老江","御幣島","加島","尼崎","立花","甲子園口","西宮","さくら夙川","芦屋","甲南山手","摂津本山","住吉#2","六甲道","摩耶","灘","三ノ宮","元町","神戸"],"lines":["11617","11617","11617","11617","11617","11617","11617","11625","11625","11625","11625","11625","11625","11625","11625","11603","11603","11603","11603","11603","11603","11603","11603","11603","11603","11603","11603","11603","11603"]},{"name":"JR 간쿠쾌속","seq":["天王寺","美章園","南田辺","鶴ヶ丘","長居","我孫子町","杉本町","浅香","堺市","三国ヶ丘","百舌鳥","上野芝","津久野","鳳","富木","北信太","信太山","和泉府中","久米田","下松","東岸和田","東貝塚","和泉橋本","東佐野","熊取","日根野","りんくうタウン","関西空港"],"lines":["11626","11626","11626","11626","11626","11626","11626","11626","11626","11626","11626","11626","11626","11626","11626","11626","11626","11626","11626","11626","11626","11626","11626","11626","11626","11628","11628"]},{"name":"JR 직통쾌속","seq":["新大阪","南吹田","JR淡路","城北公園通","JR野江","鴫野","放出","高井田中央","JR河内永和","JR俊徳道","JR長瀬","衣摺加美北","新加美","久宝寺","八尾","志紀","柏原","高井田","河内堅上","三郷","王寺","法隆寺","大和小泉","郡山","奈良"],"lines":["11641","11641","11641","11641","11641","11641","11641","11641","11641","11641","11641","11641","11641","11607","11607","11607","11607","11607","11607","11607","11607","11607","11607","11607"]},{"name":"난카이 공항 직통","seq":["難波","新今宮","天下茶屋","岸里玉出","粉浜","住吉大社","住ノ江","七道","堺","湊","石津川","諏訪ノ森","浜寺公園","羽衣","高石","北助松","松ノ浜","泉大津","忠岡","春木","和泉大宮","岸和田","蛸地蔵","貝塚","二色浜","鶴原","井原里","泉佐野","りんくうタウン","関西空港"],"lines":["32001","32001","32001","32001","32001","32001","32001","32001","32001","32001","32001","32001","32001","32001","32001","32001","32001","32001","32001","32001","32001","32001","32001","32001","32001","32001","32001","32002","32002"]},{"name":"난카이 센보쿠선 직통","seq":["難波","今宮戎","新今宮","萩ノ茶屋","天下茶屋","岸里玉出","帝塚山","住吉東","沢ノ町","我孫子前","浅香山","堺東","三国ヶ丘","百舌鳥八幡","中百舌鳥","深井","泉ヶ丘","栂・美木多","光明池","和泉中央"],"lines":["32007","32007","32007","32007","32007","32007","32007","32007","32007","32007","32007","32007","32007","32007","32010","32010","32010","32010","32010"]},{"name":"게이한 나카노시마선 직통","seq":["中之島","渡辺橋","大江橋","なにわ橋","天満橋","京橋","野江","関目","森小路","千林","滝井","土居","守口市","西三荘","門真市","古川橋","大和田","萱島","寝屋川市","香里園","光善寺","枚方公園","枚方市","御殿山","牧野","樟葉","橋本#2","石清水八幡宮","淀","中書島","伏見桃山","丹波橋","墨染","藤森","龍谷大前深草","伏見稲荷","鳥羽街道","東福寺","七条","清水五条","祇園四条","三条","神宮丸太町","出町柳"],"lines":["33008","33008","33008","33008","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001","33001"]},{"name":"긴테쓰 나가노선 직통","seq":["大阪阿部野橋","河堀口","北田辺","今川","針中野","矢田","河内天美","布忍","高見ノ里","河内松原","恵我ノ荘","高鷲","藤井寺","土師ノ里","道明寺","古市","喜志","富田林","富田林西口","川西","滝谷不動","汐ノ宮","河内長野"],"lines":["31003","31003","31003","31003","31003","31003","31003","31003","31003","31003","31003","31003","31003","31003","31003","31022","31022","31022","31022","31022","31022","31022"]}],"geo":{"京都":[34.98546,135.75775],"西大路":[34.98108,135.7317],"桂川":[34.96481,135.71039],"向日町":[34.95484,135.7098],"長岡京":[34.92348,135.70088],"山崎":[34.89226,135.67912],"島本":[34.88134,135.66339],"高槻":[34.8512,135.61702],"摂津富田":[34.83773,135.59336],"JR総持寺":[34.82861,135.57778],"茨木":[34.81509,135.56208],"千里丘":[34.7915,135.55151],"岸辺":[34.77681,135.54161],"吹田":[34.76144,135.5205],"東淀川":[34.73938,135.50392],"新大阪":[34.73414,135.50185],"大阪":[34.7024,135.49519],"塚本":[34.71271,135.46884],"尼崎":[34.73179,135.43168],"尼崎#2":[34.71863,135.41731],"立花":[34.73788,135.39957],"甲子園口":[34.73905,135.37443],"西宮":[34.73898,135.3487],"西宮#2":[34.73686,135.33776],"さくら夙川":[34.73908,135.33109],"芦屋":[34.73113,135.30554],"甲南山手":[34.73062,135.29279],"摂津本山":[34.72666,135.27699],"住吉":[34.61448,135.49185],"住吉#2":[34.71631,135.26176],"六甲道":[34.71495,135.23859],"摩耶":[34.70867,135.22517],"灘":[34.70592,135.21658],"三ノ宮":[34.69477,135.19506],"元町":[34.6896,135.1874],"神戸":[34.67945,135.17822],"加茂":[34.75258,135.86961],"木津":[34.73596,135.82479],"平城山":[34.71043,135.81025],"奈良":[34.68048,135.81894],"郡山":[34.64834,135.79044],"大和小泉":[34.62223,135.76349],"法隆寺":[34.60138,135.7386],"王寺":[34.59745,135.704],"三郷":[34.58887,135.68748],"河内堅上":[34.574,135.66296],"高井田":[34.57147,135.63864],"高井田#2":[34.67875,135.57311],"柏原":[34.58668,135.62341],"志紀":[34.60025,135.616],"八尾":[34.61727,135.59714],"久宝寺":[34.62256,135.58399],"加美":[34.62689,135.56694],"平野":[34.63084,135.55161],"平野#2":[34.62108,135.54889],"平野#3":[34.86872,135.41727],"東部市場前":[34.63806,135.5378],"天王寺":[34.64784,135.51322],"新今宮":[34.65015,135.50108],"今宮":[34.65416,135.49298],"JR難波":[34.66644,135.49526],"西木津":[34.73776,135.80351],"祝園":[34.76017,135.79211],"下狛":[34.78058,135.78857],"JR三山木":[34.79833,135.78458],"同志社前":[34.80512,135.77863],"京田辺":[34.82111,135.76866],"大住":[34.83078,135.74987],"松井山手":[34.83329,135.72762],"長尾":[34.82594,135.71309],"藤阪":[34.81447,135.70275],"津田":[34.80137,135.69795],"河内磐船":[34.7765,135.68459],"星田":[34.76735,135.66345],"寝屋川公園":[34.75549,135.65328],"忍ヶ丘":[34.74576,135.64523],"四条畷":[34.73013,135.6393],"野崎":[34.71833,135.63694],"住道":[34.70624,135.6215],"鴻池新田":[34.69885,135.59768],"徳庵":[34.69242,135.58139],"放出":[34.6881,135.5633],"鴫野":[34.69277,135.545],"京橋":[34.69605,135.53425],"芦原橋":[34.65861,135.48924],"大正":[34.66558,135.47993],"弁天町":[34.6694,135.46235],"西九条":[34.68269,135.46678],"野田":[34.69175,135.47545],"福島":[34.69717,135.48656],"天満":[34.70492,135.51223],"桜ノ宮":[34.70498,135.52094],"大阪城公園":[34.68858,135.53448],"森ノ宮":[34.68041,135.534],"玉造":[34.67356,135.5329],"鶴橋":[34.66526,135.53013],"桃谷":[34.65845,135.52791],"寺田町":[34.64796,135.52344],"安治川口":[34.67342,135.44392],"ユニバーサルシティ":[34.66784,135.4387],"桜島":[34.66206,135.43214],"大阪城北詰":[34.69428,135.52554],"大阪天満宮":[34.6974,135.51344],"北新地":[34.69832,135.49704],"新福島":[34.69509,135.48593],"海老江":[34.69544,135.47328],"御幣島":[34.71259,135.45568],"加島":[34.7275,135.45418],"美章園":[34.63841,135.52376],"南田辺":[34.62555,135.52086],"鶴ヶ丘":[34.618,135.51709],"長居":[34.6109,135.51277],"我孫子町":[34.60187,135.50667],"杉本町":[34.59311,135.50303],"浅香":[34.5853,135.50242],"堺市":[34.57776,135.49864],"三国ヶ丘":[34.56632,135.49274],"百舌鳥":[34.55832,135.48893],"上野芝":[34.54948,135.47803],"津久野":[34.54229,135.46811],"鳳":[34.53167,135.45873],"富木":[34.52253,135.45117],"北信太":[34.51067,135.44151],"信太山":[34.50018,135.4329],"和泉府中":[34.48794,135.42389],"久米田":[34.46574,135.40538],"下松":[34.45734,135.39683],"東岸和田":[34.44934,135.38586],"東貝塚":[34.44005,135.37305],"和泉橋本":[34.42738,135.35876],"東佐野":[34.41674,135.35014],"熊取":[34.40605,135.34109],"日根野":[34.39075,135.33131],"長滝":[34.38186,135.31957],"新家":[34.37241,135.29908],"和泉砂川":[34.36029,135.28124],"和泉鳥取":[34.34254,135.26324],"山中渓":[34.32553,135.26974],"紀伊":[34.26921,135.24618],"六十谷":[34.26244,135.20712],"紀伊中ノ島":[34.24289,135.19022],"和歌山":[34.23244,135.19145],"東羽衣":[34.53503,135.44282],"りんくうタウン":[34.41031,135.30012],"関西空港":[34.436,135.24342],"塚口":[34.75103,135.42495],"塚口#2":[34.75283,135.41585],"猪名寺":[34.76409,135.4226],"伊丹":[34.78065,135.42169],"北伊丹":[34.80135,135.41933],"川西池田":[34.82486,135.4099],"中山寺":[34.81663,135.37399],"宝塚":[34.81156,135.3404],"生瀬":[34.81916,135.32506],"西宮名塩":[34.82713,135.30887],"武田尾":[34.85532,135.30584],"道場":[34.8673,135.25553],"三田":[34.88879,135.22979],"新三田":[34.91018,135.20861],"広野":[34.92842,135.19127],"相野":[34.94748,135.156],"藍本":[34.97704,135.15553],"草野":[34.99689,135.1524],"古市":[34.55416,135.60909],"古市#2":[35.02193,135.15481],"南矢代":[35.0377,135.17487],"篠山口":[35.05622,135.17745],"南吹田":[34.74949,135.51158],"JR淡路":[34.74094,135.51972],"城北公園通":[34.72366,135.53066],"JR野江":[34.70719,135.54146],"高井田中央":[34.67876,135.57236],"JR河内永和":[34.66472,135.57226],"JR俊徳道":[34.65837,135.57242],"JR長瀬":[34.64952,135.57017],"衣摺加美北":[34.63833,135.56703],"新加美":[34.62686,135.56859],"大阪難波":[34.66711,135.49914],"近鉄日本橋":[34.66695,135.50582],"大阪上本町":[34.66551,135.52219],"大阪阿部野橋":[34.64549,135.51506],"河堀口":[34.64117,135.52424],"北田辺":[34.63218,135.52893],"今川":[34.62623,135.53115],"針中野":[34.61697,135.53308],"矢田":[34.60593,135.53294],"河内天美":[34.58582,135.53551],"布忍":[34.57782,135.53941],"高見ノ里":[34.57523,135.54619],"河内松原":[34.57556,135.5571],"恵我ノ荘":[34.57359,135.57275],"高鷲":[34.5716,135.5845],"藤井寺":[34.57167,135.59405],"土師ノ里":[34.5716,135.61562],"道明寺":[34.56834,135.6204],"駒ヶ谷":[34.54575,135.622],"上ノ太子":[34.53297,135.63763],"二上山":[34.53907,135.68597],"二上神社口":[34.5321,135.69414],"当麻寺":[34.51641,135.7059],"磐城":[34.5113,135.71087],"尺土":[34.50858,135.7214],"高田市":[34.50715,135.74212],"浮孔":[34.49808,135.75475],"坊城":[34.49358,135.76488],"橿原神宮西口":[34.48619,135.78137],"橿原神宮前":[34.48399,135.79434],"今里":[34.6667,135.5471],"布施":[34.66409,135.56352],"俊徳道":[34.65822,135.57178],"長瀬":[34.64988,135.57761],"弥刀":[34.64134,135.58341],"久宝寺口":[34.63459,135.59055],"近鉄八尾":[34.62978,135.60359],"河内山本":[34.62789,135.61932],"高安":[34.61938,135.6244],"恩智":[34.60975,135.62631],"法善寺":[34.59518,135.62633],"堅下":[34.58825,135.62733],"安堂":[34.58021,135.62906],"河内国分":[34.56675,135.63568],"大阪教育大前":[34.55537,135.64514],"関屋":[34.55369,135.66778],"二上":[34.54651,135.68811],"近鉄下田":[34.54148,135.70403],"五位堂":[34.53476,135.71794],"築山":[34.52613,135.73304],"大和高田":[34.51976,135.74226],"松塚":[34.5206,135.76151],"真菅":[34.51958,135.77281],"大和八木":[34.51321,135.79148],"耳成":[34.51241,135.81507],"大福":[34.51285,135.82976],"桜井":[34.8168,135.4607],"桜井#2":[34.51314,135.84653],"大和朝倉":[34.51602,135.86893],"長谷寺":[34.52689,135.90645],"榛原":[34.52989,135.95475],"室生口大野":[34.56611,136.01525],"三本松":[34.57857,136.03585],"柏原南口":[34.58153,135.62496],"河内永和":[34.66428,135.57318],"河内小阪":[34.66394,135.5815],"八戸ノ里":[34.66372,135.58947],"若江岩田":[34.66311,135.60832],"河内花園":[34.66271,135.61835],"東花園":[34.66239,135.62681],"瓢箪山":[34.66196,135.63914],"枚岡":[34.66958,135.64807],"額田":[34.67518,135.65109],"石切":[34.68474,135.655],"生駒":[34.69308,135.69801],"東生駒":[34.69173,135.71049],"富雄":[34.69423,135.73483],"学園前":[34.69702,135.74971],"菖蒲池":[34.69796,135.76133],"大和西大寺":[34.69358,135.78317],"新大宮":[34.68543,135.81074],"近鉄奈良":[34.68432,135.82747],"服部川":[34.62648,135.6411],"信貴山口":[34.61997,135.64212],"喜志":[34.52265,135.60714],"富田林":[34.50417,135.60041],"富田林西口":[34.5003,135.59635],"川西":[34.49199,135.5907],"滝谷不動":[34.48136,135.58667],"汐ノ宮":[34.46696,135.57919],"河内長野":[34.45068,135.57317],"長田":[34.67875,135.59192],"荒本":[34.67863,135.60491],"吉田":[34.68029,135.62413],"新石切":[34.68013,135.64086],"白庭台":[34.72035,135.71669],"学研北生駒":[34.72479,135.72304],"学研奈良登美ヶ丘":[34.72654,135.75244],"高安山":[34.61368,135.65379],"難波":[34.66357,135.50195],"天下茶屋":[34.63685,135.49667],"岸里玉出":[34.62829,135.49439],"粉浜":[34.61833,135.49176],"住吉大社":[34.61243,135.49012],"住ノ江":[34.60535,135.48701],"七道":[34.59231,135.48056],"堺":[34.58196,135.46875],"湊":[34.57049,135.45997],"石津川":[34.55938,135.45318],"諏訪ノ森":[34.55176,135.44913],"浜寺公園":[34.54124,135.44463],"羽衣":[34.53455,135.44178],"高石":[34.52144,135.43272],"北助松":[34.51452,135.42278],"松ノ浜":[34.50893,135.4147],"泉大津":[34.50323,135.40664],"忠岡":[34.48864,135.39767],"春木":[34.47769,135.39208],"和泉大宮":[34.46792,135.38491],"岸和田":[34.4603,135.37819],"蛸地蔵":[34.45644,135.37031],"貝塚":[34.4455,135.35748],"二色浜":[34.43272,135.34527],"鶴原":[34.42648,135.33837],"井原里":[34.41983,135.33074],"泉佐野":[34.41115,135.31672],"羽倉崎":[34.39935,135.29948],"吉見ノ里":[34.3914,135.28976],"岡田浦":[34.38457,135.27694],"樽井":[34.37418,135.26136],"尾崎":[34.36103,135.24017],"鳥取ノ荘":[34.35132,135.23186],"箱作":[34.34132,135.21263],"淡輪":[34.33123,135.17816],"みさき公園":[34.32399,135.16098],"孝子":[34.29062,135.15102],"和歌山大学前":[34.27631,135.14708],"紀ノ川":[34.25494,135.16591],"和歌山市":[34.23672,135.16673],"伽羅橋":[34.52887,135.43685],"高師浜":[34.52739,135.43191],"深日町":[34.31823,135.148],"深日港":[34.31739,135.1413],"多奈川":[34.3167,135.13718],"今宮戎":[34.65514,135.50153],"萩ノ茶屋":[34.64561,135.49899],"帝塚山":[34.62233,135.49841],"住吉東":[34.6133,135.49759],"沢ノ町":[34.60628,135.49696],"我孫子前":[34.60019,135.49689],"浅香山":[34.58932,135.49103],"堺東":[34.57588,135.48506],"百舌鳥八幡":[34.56058,135.49875],"中百舌鳥":[34.55623,135.50445],"白鷺":[34.55024,135.51315],"初芝":[34.54232,135.52649],"萩原天神":[34.53713,135.53509],"北野田":[34.52295,135.54318],"狭山":[34.51673,135.54814],"大阪狭山市":[34.50464,135.55723],"金剛":[34.49532,135.55931],"滝谷":[34.47958,135.5622],"千代田":[34.46889,135.56631],"三日市町":[34.43672,135.57134],"美加の台":[34.4247,135.57717],"千早口":[34.41149,135.5902],"天見":[34.39756,135.5955],"紀見峠":[34.36629,135.5999],"林間田園都市":[34.35529,135.60321],"御幸辻":[34.33802,135.60208],"橋本":[34.31816,135.61477],"橋本#2":[34.88204,135.68425],"紀伊清水":[34.3075,135.60478],"学文路":[34.29658,135.57988],"九度山":[34.28778,135.56449],"高野下":[34.27164,135.56636],"下古沢":[34.2665,135.55321],"上古沢":[34.25736,135.54802],"紀伊細川":[34.23572,135.55371],"紀伊神谷":[34.24285,135.57103],"極楽橋":[34.23435,135.58208],"汐見橋":[34.66764,135.48616],"芦原町":[34.66052,135.48646],"木津川":[34.6547,135.48309],"津守":[34.647,135.48335],"西天下茶屋":[34.63874,135.48908],"深井":[34.5304,135.49746],"泉ヶ丘":[34.4971,135.51157],"栂・美木多":[34.48509,135.49029],"光明池":[34.47471,135.47557],"和泉中央":[34.46121,135.45606],"出町柳":[35.02965,135.77252],"神宮丸太町":[35.01756,135.77228],"三条":[35.00911,135.77227],"祇園四条":[35.00369,135.77196],"清水五条":[34.99569,135.76838],"七条":[34.98932,135.76785],"東福寺":[34.98137,135.76978],"鳥羽街道":[34.97363,135.77],"伏見稲荷":[34.96897,135.76928],"龍谷大前深草":[34.96425,135.77015],"藤森":[34.95678,135.77019],"墨染":[34.94821,135.76913],"丹波橋":[34.93888,135.76546],"伏見桃山":[34.9326,135.76437],"中書島":[34.92688,135.76017],"淀":[34.90682,135.72146],"石清水八幡宮":[34.88454,135.70035],"樟葉":[34.86198,135.67535],"牧野":[34.84387,135.66558],"御殿山":[34.82918,135.65397],"枚方市":[34.81617,135.64881],"枚方公園":[34.81153,135.63947],"光善寺":[34.79774,135.63012],"香里園":[34.78461,135.63093],"寝屋川市":[34.76389,135.6206],"萱島":[34.74745,135.61118],"大和田":[34.74296,135.60267],"古川橋":[34.73994,135.59148],"門真市":[34.73809,135.58322],"西三荘":[34.73731,135.5759],"守口市":[34.73532,135.56527],"土居":[34.73058,135.55976],"滝井":[34.72787,135.55746],"千林":[34.72397,135.55474],"森小路":[34.71942,135.55169],"関目":[34.71252,135.54695],"野江":[34.70722,135.54336],"天満橋":[34.6902,135.51663],"北浜":[34.6918,135.50683],"淀屋橋":[34.69246,135.50165],"宮之阪":[34.81365,135.65663],"星ヶ丘":[34.8077,135.65975],"村野":[34.80183,135.66422],"郡津":[34.79438,135.66987],"交野市":[34.78692,135.67559],"河内森":[34.77386,135.68562],"私市":[34.76767,135.68657],"なにわ橋":[34.69283,135.50659],"大江橋":[34.6943,135.50041],"渡辺橋":[34.69392,135.49542],"中之島":[34.6915,135.48737],"大阪梅田":[34.70324,135.49738],"中津":[34.71047,135.49497],"十三":[34.72023,135.48248],"神崎川":[34.73225,135.47297],"園田":[34.75191,135.44819],"武庫之荘":[34.75159,135.39382],"西宮北口":[34.74595,135.3567],"夙川":[34.74225,135.32821],"芦屋川":[34.73634,135.30065],"岡本":[34.72917,135.27594],"御影":[34.72451,135.2518],"御影#2":[34.71489,135.25569],"六甲":[34.71989,135.23437],"王子公園":[34.71035,135.21855],"春日野道":[34.70125,135.20668],"三宮":[34.6935,135.1951],"三国":[34.73725,135.48313],"庄内":[34.75033,135.4751],"服部天神":[34.76302,135.47511],"曽根":[34.77108,135.46777],"岡町":[34.77895,135.4651],"豊中":[34.78725,135.46207],"蛍池":[34.79436,135.44924],"石橋阪大前":[34.80825,135.44549],"池田":[34.82154,135.4258],"川西能勢口":[34.82765,135.41339],"雲雀丘花屋敷":[34.82736,135.40295],"山本":[34.82192,135.3885],"中山観音":[34.81952,135.36924],"売布神社":[34.81586,135.36134],"清荒神":[34.81127,135.35352],"京都河原町":[35.00377,135.76946],"烏丸":[35.00366,135.75911],"大宮":[35.00359,135.74876],"西院":[35.00362,135.73245],"西京極":[34.99246,135.71846],"桂":[34.97952,135.7033],"洛西口":[34.96408,135.7031],"東向日":[34.95388,135.70465],"西向日":[34.93989,135.70266],"長岡天神":[34.92479,135.69233],"西山天王山":[34.9127,135.68851],"大山崎":[34.89149,135.68164],"水無瀬":[34.87774,135.66785],"上牧":[34.87202,135.66163],"高槻市":[34.8499,135.62327],"富田":[34.83521,135.59272],"総持寺":[34.82726,135.58492],"茨木市":[34.81647,135.57582],"南茨木":[34.80235,135.56515],"摂津市":[34.78641,135.55372],"正雀":[34.77545,135.54566],"相川":[34.75794,135.53385],"上新庄":[34.75087,135.53311],"淡路":[34.73883,135.51653],"崇禅寺":[34.73105,135.51019],"南方":[34.72566,135.49951],"牧落":[34.82344,135.46579],"箕面":[34.8344,135.46819],"北千里":[34.81987,135.51111],"山田":[34.80424,135.51569],"南千里":[34.79239,135.50879],"千里山":[34.7789,135.50547],"関大前":[34.77098,135.50614],"豊津":[34.76459,135.50901],"下新庄":[34.74647,135.51989],"柴島":[34.72844,135.51148],"天神橋筋六丁目":[34.71026,135.51076],"淀川":[34.69616,135.46525],"姫島":[34.70447,135.45823],"千船":[34.71225,135.44536],"杭瀬":[34.71827,135.43884],"大物":[34.71658,135.42555],"出屋敷":[34.71823,135.4046],"尼崎センタープール前":[34.71776,135.39504],"武庫川":[34.71815,135.38365],"鳴尾・武庫川女子大前":[34.71968,135.37036],"甲子園":[34.72399,135.36316],"久寿川":[34.72698,135.35681],"今津":[34.73201,135.35157],"香櫨園":[34.73434,135.32893],"打出":[34.73162,135.31548],"深江":[34.72258,135.29135],"青木":[34.71695,135.28062],"魚崎":[34.71262,135.26924],"石屋川":[34.71327,135.24933],"新在家":[34.71057,135.24057],"大石":[34.70767,135.23105],"西灘":[34.70578,135.22464],"岩屋":[34.70406,135.21796],"桜川":[34.66843,135.48884],"ドーム前":[34.67027,135.47831],"九条":[34.67341,135.47448],"千鳥橋":[34.68546,135.45782],"伝法":[34.68926,135.45156],"福":[34.69979,135.44269],"出来島":[34.70717,135.43692],"箕面萱野":[34.83165,135.48898],"箕面船場阪大前":[34.82153,135.49021],"千里中央":[34.80866,135.49507],"桃山台":[34.79384,135.49714],"緑地公園":[34.77477,135.49528],"江坂":[34.75876,135.49711],"絹延橋":[34.83481,135.42302],"滝山":[34.84307,135.4212],"鶯の森":[34.84775,135.41889],"鼓滝":[34.85473,135.41834],"多田":[34.86082,135.4165],"一の鳥居":[34.8796,135.41989],"畦野":[34.88495,135.41559],"山下":[34.89293,135.41217],"笹部":[34.89377,135.41627],"光風台":[34.89989,135.43143],"ときわ台":[34.90613,135.4382],"妙見口":[34.91154,135.4446],"貝塚市役所前":[34.43946,135.3605],"近義の里":[34.4369,135.36289],"石才":[34.4306,135.3682],"清児":[34.42479,135.37213],"名越":[34.42147,135.37503],"森":[34.41425,135.38189],"三ツ松":[34.41114,135.38339],"三ヶ山口":[34.40725,135.38503],"水間観音":[34.40353,135.38558],"東三国":[34.74105,135.4985],"西中島南方":[34.72658,135.49858],"梅田":[34.70318,135.49771],"本町":[34.68194,135.49898],"心斎橋":[34.67501,135.50033],"なんば":[34.66632,135.50028],"大国町":[34.65608,135.4978],"動物園前":[34.64881,135.50441],"昭和町":[34.63356,135.51695],"西田辺":[34.62163,135.51515],"あびこ":[34.59882,135.51275],"北花田":[34.58187,135.51647],"新金岡":[34.56745,135.51486],"なかもず":[34.55607,135.50579],"大日":[34.74948,135.57824],"守口":[34.73797,135.56385],"太子橋今市":[34.73138,135.55493],"千林大宮":[34.72381,135.54913],"関目高殿":[34.7152,135.5458],"野江内代":[34.70895,135.53814],"都島":[34.70909,135.5258],"中崎町":[34.70686,135.50525],"東梅田":[34.70103,135.49969],"南森町":[34.6977,135.51108],"谷町四丁目":[34.68191,135.51725],"谷町六丁目":[34.67492,135.51691],"谷町九丁目":[34.66715,135.5158],"四天王寺前夕陽ヶ丘":[34.65854,135.51413],"阿倍野":[34.64237,135.51198],"文の里":[34.63604,135.51802],"田辺":[34.62821,135.52552],"駒川中野":[34.62151,135.53304],"喜連瓜破":[34.60938,135.55163],"出戸":[34.60901,135.5658],"長原":[34.60243,135.57385],"八尾南":[34.59743,135.58246],"西梅田":[34.69964,135.4958],"肥後橋":[34.69136,135.49639],"四ツ橋":[34.67411,135.49678],"花園町":[34.64437,135.49664],"岸里":[34.63437,135.49386],"玉出":[34.6241,135.49053],"北加賀屋":[34.62132,135.47886],"住之江公園":[34.60927,135.47188],"夢洲":[34.65236,135.38994],"コスモスクエア":[34.64289,135.41247],"大阪港":[34.65388,135.43434],"朝潮橋":[34.66103,135.44886],"阿波座":[34.68148,135.4863],"堺筋本町":[34.68187,135.50691],"緑橋":[34.68076,135.54524],"深江橋":[34.67909,135.55719],"野田阪神":[34.69439,135.47482],"玉川":[34.68961,135.47619],"西長堀":[34.67526,135.48722],"日本橋":[34.66715,135.50663],"新深江":[34.66816,135.55384],"小路":[34.66153,135.55624],"北巽":[34.65298,135.55496],"南巽":[34.64326,135.5533],"扇町":[34.70381,135.5108],"長堀橋":[34.67464,135.50636],"恵美須町":[34.65508,135.50557],"ドーム前千代崎":[34.67076,135.47941],"西大橋":[34.67544,135.49357],"松屋町":[34.67548,135.51247],"大阪ビジネスパーク":[34.69214,135.52969],"蒲生四丁目":[34.70037,135.54771],"今福鶴見":[34.70191,135.56004],"横堤":[34.70353,135.57274],"鶴見緑地":[34.71075,135.58024],"門真南":[34.71686,135.59246],"トレードセンター前":[34.63865,135.41234],"中ふ頭":[34.63409,135.41742],"ポートタウン西":[34.6309,135.42278],"ポートタウン東":[34.63088,135.42908],"フェリーターミナル":[34.61925,135.43496],"南港東":[34.61383,135.43861],"南港口":[34.61383,135.44596],"平林":[34.61068,135.45858],"大阪空港":[34.7916,135.44182],"柴原阪大前":[34.80027,135.45873],"少路":[34.80425,135.47551],"万博記念公園":[34.80669,135.53023],"宇野辺":[34.808,135.55441],"沢良宜":[34.7939,135.56617],"摂津":[34.77984,135.56148],"南摂津":[34.76539,135.56857],"公園東口":[34.81043,135.53923],"阪大病院前":[34.81847,135.53],"豊川":[34.83461,135.52678],"彩都西":[34.85549,135.52293],"天王寺駅前":[34.6462,135.51293],"松虫":[34.63546,135.50985],"東天下茶屋":[34.63254,135.50848],"北畠":[34.62725,135.50541],"姫松":[34.62416,135.5032],"帝塚山三丁目":[34.62057,135.50071],"帝塚山四丁目":[34.61765,135.49905],"神ノ木":[34.61584,135.49696],"新今宮駅前":[34.64953,135.50333],"今池":[34.6457,135.50234],"今船":[34.6427,135.50161],"松田町":[34.6392,135.5009],"北天下茶屋":[34.63651,135.50023],"聖天坂":[34.63291,135.49942],"天神ノ森":[34.6296,135.49799],"東玉出":[34.62678,135.49593],"塚西":[34.62352,135.49465],"東粉浜":[34.61813,135.49259],"住吉鳥居前":[34.61214,135.49109],"細井川":[34.60998,135.49122],"安立町":[34.60571,135.49019],"我孫子道":[34.60038,135.48883],"大和川":[34.59472,135.48676],"高須神社":[34.59049,135.48518],"綾ノ町":[34.58794,135.48315],"神明町":[34.58528,135.48012],"妙国寺前":[34.58344,135.47843],"花田口":[34.58152,135.47665],"大小路":[34.57916,135.47445],"宿院":[34.57644,135.47196],"寺地町":[34.57364,135.46934],"御陵前":[34.57064,135.4666],"東湊":[34.56474,135.46252],"石津北":[34.56013,135.45881],"石津":[34.55544,135.45507],"船尾":[34.54991,135.45057],"浜寺駅前":[34.54142,135.44316],"井高野":[34.76017,135.54735],"瑞光四丁目":[34.75231,135.54461],"だいどう豊里":[34.74381,135.54441],"清水":[34.72164,135.56077],"新森古市":[34.7152,135.5583],"関目成育":[34.71298,135.54635]},"facts":{"梅田":"1933년 5월, 오사카 최초의 지하철(미도스지선 우메다–신사이바시)이 출발한 역입니다.","大阪":"JR 서일본 최대의 터미널. 지하 통로로 우메다·히가시우메다·니시우메다, 한큐·한신 오사카우메다와 이어집니다.","心斎橋":"1933년 첫 개통 구간의 남쪽 끝. 아케이드 상점가 신사이바시스지가 바로 위에 있습니다.","なんば":"도톤보리와 글리코 간판이 걸어서 몇 분 거리인 '미나미' 번화가의 중심입니다.","天王寺":"높이 300m의 아베노 하루카스와 맞닿아 있고, 덴노지 동물원·공원이 가깝습니다.","新今宮":"쓰텐카쿠 타워와 신세카이 거리로 가는 JR·난카이 역입니다.","新大阪":"도카이도·산요 신칸센으로 갈아타는 역입니다.","大阪港":"오사카 수족관 가이유칸과 덴포잔 대관람차가 가깝습니다.","夢洲":"2025년 1월 개업. 2025 오사카·간사이 엑스포 회장으로 바로 이어지는 역입니다.","ユニバーサルシティ":"유니버설 스튜디오 재팬(USJ) 바로 앞 역입니다.","関西空港":"간사이 국제공항. JR 간쿠쾌속과 난카이 공항 직통열차의 종점입니다.","大阪城公園":"오사카성 천수각으로 가는 JR 역입니다.","鶴橋":"쓰루하시 시장과 이쿠노 코리아타운이 가까운, 한국 음식으로 유명한 동네입니다.","天神橋筋六丁目":"약 2.6km로 일본에서 가장 긴 상점가라 불리는 덴진바시스지 상점가의 북쪽 끝입니다.","日本橋":"구로몬 시장과 전자상가 덴덴타운이 가깝습니다.","甲子園":"한신 타이거스의 홈구장, 고시엔 구장 앞 역입니다.","宝塚":"다카라즈카 가극단 대극장과 데즈카 오사무 기념관이 있는 동네입니다.","京都河原町":"한큐 교토선의 종점. 기온과 가와라마치 번화가가 바로 앞입니다.","出町柳":"게이한 본선의 교토 쪽 종점. 가모강과 다카노강이 만나는 삼각주가 가깝습니다.","近鉄奈良":"사슴이 사는 나라 공원과 도다이지가 걸어서 갈 수 있는 거리입니다.","極楽橋":"난카이 고야선 종점. 케이블카로 갈아타 고야산에 오릅니다.","伏見稲荷":"수천 개의 붉은 도리이로 유명한 후시미이나리 신사 앞 역입니다.","箕面萱野":"2024년 3월 기타오사카큐코 연장으로 문을 연, 미도스지선 직통열차의 북쪽 종점입니다.","万博記念公園":"1970년 오사카 만국박람회 터. 태양의 탑이 있는 공원입니다.","住吉大社":"오사카에서 가장 오래된 신사 중 하나인 스미요시 타이샤 앞 역입니다.","コスモスクエア":"주오선과 난코포트타운선이 만나는 역. 주오선은 바다 밑 터널로 이곳에 닿습니다."},"labels":{"京都":"교토","西大路":"니시오지","桂川":"가쓰라가와","向日町":"무코마치","長岡京":"나가오카쿄","山崎":"야마자키","島本":"시마모토","高槻":"다카쓰키","摂津富田":"셋쓰톤다","JR総持寺":"JR 소지지","茨木":"이바라키","千里丘":"센리오카","岸辺":"기시베","吹田":"스이타","東淀川":"히가시요도가와","新大阪":"신오사카","大阪":"오사카","塚本":"쓰카모토","尼崎":"아마가사키","尼崎#2":"아마가사키","立花":"다치바나","甲子園口":"고시엔구치","西宮":"니시노미야","西宮#2":"니시노미야","さくら夙川":"사쿠라슈쿠가와","芦屋":"아시야","甲南山手":"고난야마테","摂津本山":"셋쓰모토야마","住吉":"스미요시","住吉#2":"스미요시","六甲道":"롯코미치","摩耶":"마야","灘":"나다","三ノ宮":"산노미야","元町":"모토마치","神戸":"고베","加茂":"가모","木津":"기즈","平城山":"나라야마","奈良":"나라","郡山":"고리야마","大和小泉":"야마토코이즈미","法隆寺":"호류지","王寺":"오지","三郷":"산고","河内堅上":"가와치카타카미","高井田":"다카이다","高井田#2":"다카이다","柏原":"가시와라","志紀":"시키","八尾":"야오","久宝寺":"규호지","加美":"가미","平野":"히라노","平野#2":"히라노","平野#3":"히라노","東部市場前":"도부시조마에","天王寺":"덴노지","新今宮":"신이마미야","今宮":"이마미야","JR難波":"JR 난바","西木津":"니시키즈","祝園":"호소노","下狛":"시모코마","JR三山木":"JR 미야마키","同志社前":"도시샤마에","京田辺":"교타나베","大住":"오스미","松井山手":"마쓰이야마테","長尾":"나가오","藤阪":"후지사카","津田":"쓰다","河内磐船":"가와치이와후네","星田":"호시다","寝屋川公園":"네야가와코엔","忍ヶ丘":"시노부가오카","四条畷":"시조나와테","野崎":"노자키","住道":"스미노도","鴻池新田":"고노이케신덴","徳庵":"도쿠안","放出":"하나텐","鴫野":"시기노","京橋":"교바시","芦原橋":"아시하라바시","大正":"다이쇼","弁天町":"벤텐초","西九条":"니시쿠조","野田":"노다","福島":"후쿠시마","天満":"덴마","桜ノ宮":"사쿠라노미야","大阪城公園":"오사카조코엔","森ノ宮":"모리노미야","玉造":"다마쓰쿠리","鶴橋":"쓰루하시","桃谷":"모모다니","寺田町":"데라다초","安治川口":"아지카와구치","ユニバーサルシティ":"유니버설시티","桜島":"사쿠라지마","大阪城北詰":"오사카조키타즈메","大阪天満宮":"오사카텐만구","北新地":"기타신치","新福島":"신후쿠시마","海老江":"에비에","御幣島":"미테지마","加島":"가시마","美章園":"비쇼엔","南田辺":"미나미타나베","鶴ヶ丘":"쓰루가오카","長居":"나가이","我孫子町":"아비코초","杉本町":"스기모토초","浅香":"아사카","堺市":"사카이시","三国ヶ丘":"미쿠니가오카","百舌鳥":"모즈","上野芝":"우에노시바","津久野":"쓰쿠노","鳳":"오토리","富木":"도노키","北信太":"기타시노다","信太山":"시노다야마","和泉府中":"이즈미후추","久米田":"구메다","下松":"시모마쓰","東岸和田":"히가시키시와다","東貝塚":"히가시카이즈카","和泉橋本":"이즈미하시모토","東佐野":"히가시사노","熊取":"구마토리","日根野":"히네노","長滝":"나가타키","新家":"신게","和泉砂川":"이즈미스나가와","和泉鳥取":"이즈미톳토리","山中渓":"야마나카다니","紀伊":"기이","六十谷":"무소타","紀伊中ノ島":"기이나카노시마","和歌山":"와카야마","東羽衣":"히가시하고로모","りんくうタウン":"린쿠타운","関西空港":"간사이쿠코","塚口":"쓰카구치","塚口#2":"쓰카구치","猪名寺":"이나데라","伊丹":"이타미","北伊丹":"기타이타미","川西池田":"가와니시이케다","中山寺":"나카야마데라","宝塚":"다카라즈카","生瀬":"나마제","西宮名塩":"니시노미야나지오","武田尾":"다케다오","道場":"도조","三田":"산다","新三田":"신산다","広野":"히로노","相野":"아이노","藍本":"아이모토","草野":"구사노","古市":"후루이치","古市#2":"후루이치","南矢代":"미나미야시로","篠山口":"사사야마구치","南吹田":"미나미스이타","JR淡路":"JR 아와지","城北公園通":"시로키타코엔도리","JR野江":"JR 노에","高井田中央":"다카이다추오","JR河内永和":"JR 가와치에이와","JR俊徳道":"JR 슌토쿠미치","JR長瀬":"JR 나가세","衣摺加美北":"기즈리카미키타","新加美":"신카미","大阪難波":"오사카난바","近鉄日本橋":"긴테쓰 닛폰바시","大阪上本町":"오사카우에혼마치","大阪阿部野橋":"오사카아베노바시","河堀口":"고보레구치","北田辺":"기타타나베","今川":"이마가와","針中野":"하리나카노","矢田":"야타","河内天美":"가와치아마미","布忍":"누노세","高見ノ里":"다카미노사토","河内松原":"가와치마쓰바라","恵我ノ荘":"에가노쇼","高鷲":"다카와시","藤井寺":"후지이데라","土師ノ里":"하지노사토","道明寺":"도묘지","駒ヶ谷":"고마가타니","上ノ太子":"가미노타이시","二上山":"니조잔","二上神社口":"니조진자구치","当麻寺":"다이마데라","磐城":"이와키","尺土":"샤쿠도","高田市":"다카다시","浮孔":"우키아나","坊城":"보조","橿原神宮西口":"가시하라진구니시구치","橿原神宮前":"가시하라진구마에","今里":"이마자토","布施":"후세","俊徳道":"슌토쿠미치","長瀬":"나가세","弥刀":"미토","久宝寺口":"규호지구치","近鉄八尾":"긴테쓰 야오","河内山本":"가와치야마모토","高安":"다카야스","恩智":"온지","法善寺":"호젠지","堅下":"가타시모","安堂":"안도","河内国分":"가와치코쿠부","大阪教育大前":"오사카쿄이쿠다이마에","関屋":"세키야","二上":"니조","近鉄下田":"긴테쓰 시모다","五位堂":"고이도","築山":"쓰키야마","大和高田":"야마토타카다","松塚":"마쓰즈카","真菅":"마스가","大和八木":"야마토야기","耳成":"미미나시","大福":"다이후쿠","桜井":"사쿠라이","桜井#2":"사쿠라이","大和朝倉":"야마토아사쿠라","長谷寺":"하세데라","榛原":"하이바라","室生口大野":"무로구치오노","三本松":"산본마쓰","柏原南口":"가시와라미나미구치","河内永和":"가와치에이와","河内小阪":"가와치코사카","八戸ノ里":"야에노사토","若江岩田":"와카에이와타","河内花園":"가와치하나조노","東花園":"히가시하나조노","瓢箪山":"효탄야마","枚岡":"히라오카","額田":"누카타","石切":"이시키리","生駒":"이코마","東生駒":"히가시이코마","富雄":"도미오","学園前":"가쿠엔마에","菖蒲池":"아야메이케","大和西大寺":"야마토사이다이지","新大宮":"신오미야","近鉄奈良":"긴테쓰 나라","服部川":"핫토리가와","信貴山口":"시기산구치","喜志":"기시","富田林":"돈다바야시","富田林西口":"돈다바야시니시구치","川西":"가와니시","滝谷不動":"다키다니후도","汐ノ宮":"시오노미야","河内長野":"가와치나가노","長田":"나가타","荒本":"아라모토","吉田":"요시타","新石切":"신이시키리","白庭台":"시라니와다이","学研北生駒":"갓켄키타이코마","学研奈良登美ヶ丘":"갓켄나라토미가오카","高安山":"다카야스야마","難波":"난바","天下茶屋":"덴가차야","岸里玉出":"기시노사토타마데","粉浜":"고하마","住吉大社":"스미요시타이샤","住ノ江":"스미노에","七道":"시치도","堺":"사카이","湊":"미나토","石津川":"이시즈가와","諏訪ノ森":"스와노모리","浜寺公園":"하마데라코엔","羽衣":"하고로모","高石":"다카이시","北助松":"기타스케마쓰","松ノ浜":"마쓰노하마","泉大津":"이즈미오쓰","忠岡":"다다오카","春木":"하루키","和泉大宮":"이즈미오미야","岸和田":"기시와다","蛸地蔵":"다코지조","貝塚":"가이즈카","二色浜":"니시키노하마","鶴原":"쓰루하라","井原里":"이하라노사토","泉佐野":"이즈미사노","羽倉崎":"하구라자키","吉見ノ里":"요시미노사토","岡田浦":"오카다우라","樽井":"다루이","尾崎":"오자키","鳥取ノ荘":"돗토리노쇼","箱作":"하코쓰쿠리","淡輪":"단노와","みさき公園":"미사키코엔","孝子":"교시","和歌山大学前":"와카야마다이가쿠마에","紀ノ川":"기노카와","和歌山市":"와카야마시","伽羅橋":"갸라바시","高師浜":"다카시노하마","深日町":"후케초","深日港":"후케코","多奈川":"다나가와","今宮戎":"이마미야에비스","萩ノ茶屋":"하기노차야","帝塚山":"데즈카야마","住吉東":"스미요시히가시","沢ノ町":"사와노초","我孫子前":"아비코마에","浅香山":"아사카야마","堺東":"사카이히가시","百舌鳥八幡":"모즈하치만","中百舌鳥":"나카모즈","白鷺":"시라사기","初芝":"하쓰시바","萩原天神":"하기하라텐진","北野田":"기타노다","狭山":"사야마","大阪狭山市":"오사카사야마시","金剛":"곤고","滝谷":"다키다니","千代田":"지요다","三日市町":"밋카이치초","美加の台":"미카노다이","千早口":"지하야구치","天見":"아마미","紀見峠":"기미토게","林間田園都市":"린칸덴엔토시","御幸辻":"미유키쓰지","橋本":"하시모토","橋本#2":"하시모토","紀伊清水":"기이시미즈","学文路":"가무로","九度山":"구도야마","高野下":"고야시타","下古沢":"시모코사와","上古沢":"가미코사와","紀伊細川":"기이호소카와","紀伊神谷":"기이카미야","極楽橋":"고쿠라쿠바시","汐見橋":"시오미바시","芦原町":"아시하라초","木津川":"기즈가와","津守":"쓰모리","西天下茶屋":"니시텐가차야","深井":"후카이","泉ヶ丘":"이즈미가오카","栂・美木多":"도가미키타","光明池":"고묘이케","和泉中央":"이즈미추오","出町柳":"데마치야나기","神宮丸太町":"진구마루타마치","三条":"산조","祇園四条":"기온시조","清水五条":"기요미즈고조","七条":"시치조","東福寺":"도후쿠지","鳥羽街道":"도바카이도","伏見稲荷":"후시미이나리","龍谷大前深草":"류코쿠다이마에후카쿠사","藤森":"후지노모리","墨染":"스미조메","丹波橋":"단바바시","伏見桃山":"후시미모모야마","中書島":"주쇼지마","淀":"요도","石清水八幡宮":"이와시미즈하치만구","樟葉":"구즈하","牧野":"마키노","御殿山":"고텐야마","枚方市":"히라카타시","枚方公園":"히라카타코엔","光善寺":"고젠지","香里園":"고리엔","寝屋川市":"네야가와시","萱島":"가야시마","大和田":"오와다","古川橋":"후루카와바시","門真市":"가도마시","西三荘":"니시산소","守口市":"모리구치시","土居":"도이","滝井":"다키이","千林":"센바야시","森小路":"모리쇼지","関目":"세키메","野江":"노에","天満橋":"덴마바시","北浜":"기타하마","淀屋橋":"요도야바시","宮之阪":"미야노사카","星ヶ丘":"호시가오카","村野":"무라노","郡津":"고즈","交野市":"가타노시","河内森":"가와치모리","私市":"기사이치","なにわ橋":"나니와바시","大江橋":"오에바시","渡辺橋":"와타나베바시","中之島":"나카노시마","大阪梅田":"오사카우메다","中津":"나카쓰","十三":"주소","神崎川":"간자키가와","園田":"소노다","武庫之荘":"무코노소","西宮北口":"니시노미야키타구치","夙川":"슈쿠가와","芦屋川":"아시야가와","岡本":"오카모토","御影":"미카게","御影#2":"미카게","六甲":"롯코","王子公園":"오지코엔","春日野道":"가스가노미치","三宮":"고베산노미야","三国":"미쿠니","庄内":"쇼나이","服部天神":"핫토리텐진","曽根":"소네","岡町":"오카마치","豊中":"도요나카","蛍池":"호타루가이케","石橋阪大前":"이시바시한다이마에","池田":"이케다","川西能勢口":"가와니시노세구치","雲雀丘花屋敷":"히바리가오카하나야시키","山本":"야마모토","中山観音":"나카야마칸논","売布神社":"메후진자","清荒神":"기요시코진","京都河原町":"교토카와라마치","烏丸":"가라스마","大宮":"오미야","西院":"사이인","西京極":"니시쿄고쿠","桂":"가쓰라","洛西口":"라쿠사이구치","東向日":"히가시무코","西向日":"니시무코","長岡天神":"나가오카텐진","西山天王山":"니시야마텐노잔","大山崎":"오야마자키","水無瀬":"미나세","上牧":"간마키","高槻市":"다카쓰키시","富田":"돈다","総持寺":"소지지","茨木市":"이바라키시","南茨木":"미나미이바라키","摂津市":"셋쓰시","正雀":"쇼자쿠","相川":"아이카와","上新庄":"가미신조","淡路":"아와지","崇禅寺":"소젠지","南方":"미나미카타","牧落":"마키오치","箕面":"미노오","北千里":"기타센리","山田":"야마다","南千里":"미나미센리","千里山":"센리야마","関大前":"간다이마에","豊津":"도요쓰","下新庄":"시모신조","柴島":"구니지마","天神橋筋六丁目":"덴진바시스지로쿠초메","淀川":"요도가와","姫島":"히메지마","千船":"지부네","杭瀬":"구이세","大物":"다이모쓰","出屋敷":"데야시키","尼崎センタープール前":"아마가사키센터풀마에","武庫川":"무코가와","鳴尾・武庫川女子大前":"나루오무코가와조시다이마에","甲子園":"고시엔","久寿川":"구스가와","今津":"이마즈","香櫨園":"고로엔","打出":"우치데","深江":"후카에","青木":"오기","魚崎":"우오자키","石屋川":"이시야가와","新在家":"신자이케","大石":"오이시","西灘":"니시나다","岩屋":"이와야","桜川":"사쿠라가와","ドーム前":"도무마에","九条":"구조","千鳥橋":"지도리바시","伝法":"덴포","福":"후쿠","出来島":"데키지마","箕面萱野":"미노오카야노","箕面船場阪大前":"미노오센바한다이마에","千里中央":"센리추오","桃山台":"모모야마다이","緑地公園":"료쿠치코엔","江坂":"에사카","絹延橋":"기누노베바시","滝山":"다키야마","鶯の森":"우구이스노모리","鼓滝":"쓰즈미가타키","多田":"다다","一の鳥居":"이치노토리이","畦野":"우네노","山下":"야마시타","笹部":"사사베","光風台":"고후다이","ときわ台":"도키와다이","妙見口":"묘켄구치","貝塚市役所前":"가이즈카시야쿠쇼마에","近義の里":"고기노사토","石才":"이시자이","清児":"세치고","名越":"나고세","森":"모리","三ツ松":"미쓰마쓰","三ヶ山口":"미케야마구치","水間観音":"미즈마칸논","東三国":"히가시미쿠니","西中島南方":"니시나카지마미나미가타","梅田":"우메다","本町":"혼마치","心斎橋":"신사이바시","なんば":"난바","大国町":"다이코쿠초","動物園前":"도부쓰엔마에","昭和町":"쇼와초","西田辺":"니시타나베","あびこ":"아비코","北花田":"기타하나다","新金岡":"신카나오카","なかもず":"나카모즈","大日":"다이니치","守口":"모리구치","太子橋今市":"다이시바시이마이치","千林大宮":"센바야시오미야","関目高殿":"세키메타카도노","野江内代":"노에우친다이","都島":"미야코지마","中崎町":"나카자키초","東梅田":"히가시우메다","南森町":"미나미모리마치","谷町四丁目":"다니마치욘초메","谷町六丁目":"다니마치로쿠초메","谷町九丁目":"다니마치큐초메","四天王寺前夕陽ヶ丘":"시텐노지마에유히가오카","阿倍野":"아베노","文の里":"후미노사토","田辺":"다나베","駒川中野":"고마가와나카노","喜連瓜破":"기레우리와리","出戸":"데토","長原":"나가하라","八尾南":"야오미나미","西梅田":"니시우메다","肥後橋":"히고바시","四ツ橋":"요쓰바시","花園町":"하나조노초","岸里":"기시노사토","玉出":"다마데","北加賀屋":"기타카가야","住之江公園":"스미노에코엔","夢洲":"유메시마","コスモスクエア":"코스모스퀘어","大阪港":"오사카코","朝潮橋":"아사시오바시","阿波座":"아와자","堺筋本町":"사카이스지혼마치","緑橋":"미도리바시","深江橋":"후카에바시","野田阪神":"노다한신","玉川":"다마가와","西長堀":"니시나가호리","日本橋":"닛폰바시","新深江":"신후카에","小路":"쇼지","北巽":"기타타쓰미","南巽":"미나미타쓰미","扇町":"오기마치","長堀橋":"나가호리바시","恵美須町":"에비스초","ドーム前千代崎":"도무마에치요자키","西大橋":"니시오하시","松屋町":"마쓰야마치","大阪ビジネスパーク":"오사카비즈니스파크","蒲生四丁目":"가모욘초메","今福鶴見":"이마후쿠쓰루미","横堤":"요코즈쓰미","鶴見緑地":"쓰루미료쿠치","門真南":"가도마미나미","トレードセンター前":"트레이드센터마에","中ふ頭":"나카후토","ポートタウン西":"포트타운니시","ポートタウン東":"포트타운히가시","フェリーターミナル":"페리터미널","南港東":"난코히가시","南港口":"난코구치","平林":"히라바야시","大阪空港":"오사카쿠코","柴原阪大前":"시바하라한다이마에","少路":"쇼지","万博記念公園":"반파쿠키넨코엔","宇野辺":"우노베","沢良宜":"사와라기","摂津":"셋쓰","南摂津":"미나미셋쓰","公園東口":"고엔히가시구치","阪大病院前":"한다이뵤인마에","豊川":"도요카와","彩都西":"사이토니시","天王寺駅前":"덴노지에키마에","松虫":"마쓰무시","東天下茶屋":"히가시텐가차야","北畠":"기타바타케","姫松":"히메마쓰","帝塚山三丁目":"데즈카야마산초메","帝塚山四丁目":"데즈카야마욘초메","神ノ木":"가미노키","新今宮駅前":"신이마미야에키마에","今池":"이마이케","今船":"이마후네","松田町":"마쓰다초","北天下茶屋":"기타텐가차야","聖天坂":"쇼텐사카","天神ノ森":"덴진노모리","東玉出":"히가시타마데","塚西":"쓰카니시","東粉浜":"히가시코하마","住吉鳥居前":"스미요시토리이마에","細井川":"호소이가와","安立町":"안류마치","我孫子道":"아비코미치","大和川":"야마토가와","高須神社":"다카스진샤","綾ノ町":"아야노초","神明町":"신메이초","妙国寺前":"묘코쿠지마에","花田口":"하나타구치","大小路":"오쇼지","宿院":"슈쿠인","寺地町":"데라지초","御陵前":"고료마에","東湊":"히가시미나토","石津北":"이시즈키타","石津":"이시즈","船尾":"후나오","浜寺駅前":"하마데라에키마에","井高野":"이타카노","瑞光四丁目":"즈이코욘초메","だいどう豊里":"다이도토요사토","清水":"시미즈","新森古市":"신모리후루이치","関目成育":"세키메세이이쿠"},"walks":[["JR俊徳道","俊徳道",3],["JR河内永和","河内永和",3],["JR淡路","淡路",7],["JR野江","野江",4],["JR野江","野江内代",7],["JR難波","大阪難波",7],["なかもず","中百舌鳥",4],["なにわ橋","北浜",3],["なんば","大阪難波",4],["なんば","難波",6],["ドーム前","ドーム前千代崎",3],["三ノ宮","三宮",4],["京都河原町","祇園四条",5],["今宮戎","大国町",6],["今宮戎","恵美須町",7],["今池","動物園前",7],["今池","萩ノ茶屋",6],["住ノ江","安立町",6],["住吉","住吉大社",5],["住吉大社","住吉鳥居前",3],["住吉大社","細井川",6],["住吉東","神ノ木",6],["加美","新加美",4],["動物園前","新今宮",6],["動物園前","新今宮駅前",4],["北天下茶屋","天下茶屋",6],["北新地","東梅田",7],["北新地","西梅田",4],["南方","西中島南方",4],["南森町","大阪天満宮",5],["四ツ橋","心斎橋",6],["四ツ橋","西大橋",6],["堅下","柏原",7],["塚西","帝塚山",7],["塚西","玉出",7],["大山崎","山崎",5],["大江橋","淀屋橋",5],["大阪","大阪梅田",5],["大阪","梅田",5],["大阪","西梅田",6],["大阪梅田","東梅田",6],["大阪梅田","梅田",3],["大阪阿部野橋","天王寺",6],["大阪阿部野橋","天王寺駅前",5],["天下茶屋","岸里",7],["天満","扇町",4],["天王寺","天王寺駅前",4],["天神ノ森","岸里玉出",7],["守口","守口市",6],["富田","摂津富田",6],["岡本","摂津本山",6],["岩屋","灘",5],["岸辺","正雀",7],["岸里玉出","東玉出",5],["崇禅寺","柴島",6],["帝塚山","帝塚山三丁目",6],["摩耶","西灘",6],["文の里","昭和町",6],["新今宮","新今宮駅前",5],["新福島","福島",5],["日本橋","近鉄日本橋",3],["東梅田","梅田",6],["東梅田","西梅田",7],["東粉浜","粉浜",3],["東羽衣","羽衣",3],["桜川","汐見橋",5],["河内森","河内磐船",6],["河堀口","美章園",6],["浜寺公園","浜寺駅前",4],["海老江","野田阪神",4],["渡辺橋","肥後橋",6],["玉川","野田",5],["船尾","諏訪ノ森",5],["芦原橋","芦原町",6],["花園町","萩ノ茶屋",5],["野田","野田阪神",6],["関目","関目成育",3],["関目","関目高殿",6],["関目成育","関目高殿",5],["高井田#2","高井田中央",3],["梅田","西梅田",6]],"start":"梅田","version":20260930};
+/* OSAKA-DATA:END */
+
+const CITIES = [
+{
+  id: "seoul", name: "서울", country: "대한민국", flag: "🇰🇷", since: 1974, fish: 0.78, geoLayout: true,
+  system: "수도권 전철",
+  fact: "1974년 8월 15일 1호선 서울역–청량리 구간으로 시작해, 지금은 연천에서 신창까지, 인천공항에서 춘천까지 수도권 전역을 잇습니다.",
+  ...SEOUL_DATA
+},
+{
+  id: "osaka", name: "오사카", country: "일본", flag: "🇯🇵", since: 1933, fish: 0.8, geoLayout: true,
+  system: "오사카권 철도 · JR·사철·지하철",
+  fact: "오사카 지하철은 1933년 미도스지선 우메다–신사이바시 구간으로 문을 연 일본 최초의 공영 지하철입니다. JR·한큐·한신·게이한·난카이·긴테쓰가 교토·고베·나라·와카야마까지 이어집니다.",
+  ...OSAKA_DATA
+},
+{
+  id: "tokyo", fish: 0.55, name: "도쿄", country: "일본", flag: "🇯🇵", since: 1927, start: "Tokyo",
+  system: "JR 야마노테선 · 도쿄메트로",
+  fact: "1927년 우에노–아사쿠사 구간에 개통한 긴자선은 아시아 최초의 지하철입니다.",
+  lines: [
+    { id: "JY", name: "야마노테선", color: "#80C241", loop: true, st: ["Tokyo","Kanda","Akihabara","Okachimachi","Ueno","Uguisudani","Nippori","Nishi-Nippori","Tabata","Komagome","Sugamo","Otsuka","Ikebukuro","Mejiro","Takadanobaba","Shin-Okubo","Shinjuku","Yoyogi","Harajuku","Shibuya","Ebisu","Meguro","Gotanda","Osaki","Shinagawa","Takanawa Gateway","Tamachi","Hamamatsucho","Shimbashi","Yurakucho"] },
+    { id: "G", name: "긴자선", color: "#F39700", st: ["Asakusa","Tawaramachi","Inaricho","Ueno","Ueno-hirokoji","Suehirocho","Kanda","Mitsukoshimae","Nihombashi","Kyobashi","Ginza","Shimbashi","Toranomon","Tameike-Sanno","Akasaka-mitsuke","Aoyama-itchome","Gaiemmae","Omotesando","Shibuya"] },
+    { id: "M", name: "마루노우치선", color: "#E60012", st: ["Ikebukuro","Shin-otsuka","Myogadani","Korakuen","Hongo-sanchome","Ochanomizu","Awajicho","Otemachi","Tokyo","Ginza","Kasumigaseki","Kokkai-gijidomae","Akasaka-mitsuke","Yotsuya","Yotsuya-sanchome","Shinjuku-gyoemmae","Shinjuku-sanchome","Shinjuku"] }
+  ],
+  geo: {
+    "Tokyo":[35.681,139.767],"Kanda":[35.692,139.771],"Akihabara":[35.698,139.773],"Ueno":[35.714,139.777],"Nippori":[35.728,139.771],
+    "Tabata":[35.738,139.761],"Sugamo":[35.733,139.739],"Ikebukuro":[35.730,139.711],"Takadanobaba":[35.713,139.704],"Shinjuku":[35.690,139.700],
+    "Harajuku":[35.670,139.703],"Shibuya":[35.658,139.702],"Ebisu":[35.647,139.710],"Meguro":[35.634,139.716],"Osaki":[35.620,139.728],
+    "Shinagawa":[35.628,139.739],"Hamamatsucho":[35.655,139.757],"Shimbashi":[35.666,139.758],"Yurakucho":[35.675,139.763],
+    "Asakusa":[35.711,139.797],"Nihombashi":[35.682,139.774],"Ginza":[35.671,139.765],"Toranomon":[35.670,139.750],
+    "Akasaka-mitsuke":[35.677,139.737],"Omotesando":[35.665,139.712],"Korakuen":[35.708,139.752],"Ochanomizu":[35.700,139.764],
+    "Otemachi":[35.686,139.766],"Kasumigaseki":[35.674,139.751],"Yotsuya":[35.686,139.730],"Shinjuku-sanchome":[35.690,139.706]
+  },
+  facts: {
+    "Shinjuku": "하루 이용객이 300만 명을 넘어 '세계에서 가장 붐비는 역'으로 기네스북에 올라 있습니다.",
+    "Asakusa": "1927년 긴자선 첫 구간(우에노–아사쿠사)의 종점. 센소지 절이 바로 앞입니다.",
+    "Ueno": "긴자선 첫 개통 구간의 출발역이자 우에노 공원·동물원의 관문입니다.",
+    "Takanawa Gateway": "2020년에 문을 연 야마노테선의 가장 새로운 역입니다.",
+    "Tokyo": "1914년 개업. 붉은 벽돌로 된 마루노우치 역사는 2012년 원래 모습으로 복원됐습니다.",
+    "Akihabara": "전자상가와 애니메이션 숍으로 유명한 '전기의 거리'입니다."
+  }
+},
+{
+  id: "nyc", fish: 0.42, name: "뉴욕", country: "미국", flag: "🇺🇸", since: 1904, start: "Times Sq–42 St",
+  system: "New York City Subway",
+  fact: "1904년 개통. 24시간 365일 운행하는 몇 안 되는 대도시 지하철입니다.",
+  lines: [
+    { id: "1", name: "1 라인", color: "#EE352E", st: ["96 St","86 St","79 St","72 St","66 St–Lincoln Center","59 St–Columbus Circle","50 St","Times Sq–42 St","34 St–Penn Station","28 St","23 St","18 St","14 St","Christopher St","Houston St","Canal St","Franklin St","Chambers St","WTC Cortlandt","Rector St","South Ferry"] },
+    { id: "45", name: "4·5 라인 (급행)", color: "#00933C", st: ["125 St","86 St (Lexington)","Lexington Av/59 St","Grand Central–42 St","14 St–Union Sq","Brooklyn Bridge–City Hall","Fulton St","Wall St","Bowling Green"] },
+    { id: "7", name: "7 라인", color: "#B933AD", st: ["Flushing–Main St","Mets–Willets Point","111 St","103 St–Corona Plaza","Junction Blvd","90 St–Elmhurst Av","82 St–Jackson Hts","74 St–Broadway","69 St","61 St–Woodside","52 St","46 St–Bliss St","40 St–Lowery St","33 St–Rawson St","Queensboro Plaza","Court Sq","Hunters Point Av","Vernon Blvd–Jackson Av","Grand Central–42 St","5 Av","Times Sq–42 St","34 St–Hudson Yards"] },
+    { id: "L", name: "L 라인", color: "#A7A9AC", st: ["8 Av","6 Av","14 St–Union Sq","3 Av","1 Av","Bedford Av","Lorimer St","Graham Av","Grand St","Montrose Av","Morgan Av","Jefferson St","DeKalb Av","Myrtle–Wyckoff Avs"] }
+  ],
+  geo: {
+    "96 St":[40.794,-73.972],"72 St":[40.778,-73.982],"59 St–Columbus Circle":[40.768,-73.982],"Times Sq–42 St":[40.755,-73.987],
+    "34 St–Penn Station":[40.750,-73.991],"14 St":[40.738,-74.000],"Chambers St":[40.715,-74.009],"South Ferry":[40.702,-74.013],
+    "125 St":[40.804,-73.937],"86 St (Lexington)":[40.779,-73.956],"Lexington Av/59 St":[40.762,-73.968],"Grand Central–42 St":[40.752,-73.977],
+    "14 St–Union Sq":[40.735,-73.990],"Brooklyn Bridge–City Hall":[40.713,-74.004],"Bowling Green":[40.704,-74.014],
+    "Flushing–Main St":[40.760,-73.830],"Mets–Willets Point":[40.754,-73.846],"61 St–Woodside":[40.746,-73.903],
+    "Queensboro Plaza":[40.750,-73.940],"34 St–Hudson Yards":[40.756,-74.002],
+    "8 Av":[40.740,-74.002],"1 Av":[40.731,-73.982],"Bedford Av":[40.717,-73.957],"Myrtle–Wyckoff Avs":[40.700,-73.912]
+  },
+  facts: {
+    "Times Sq–42 St": "뉴욕 지하철에서 이용객이 가장 많은 역 복합체로, 여러 노선이 이곳에서 만납니다.",
+    "Grand Central–42 St": "1913년에 문을 연 그랜드 센트럴 터미널 바로 아래에 있는 지하철역입니다.",
+    "South Ferry": "스태튼아일랜드 페리 터미널과 이어지는 맨해튼 남쪽 끝의 역입니다.",
+    "Mets–Willets Point": "뉴욕 메츠의 홈구장 시티 필드와 US 오픈이 열리는 테니스 센터 앞입니다.",
+    "Bedford Av": "브루클린 윌리엄스버그의 중심. L 라인이 맨해튼을 벗어나 처음 서는 역입니다.",
+    "Brooklyn Bridge–City Hall": "브루클린 다리 보행로 입구와 뉴욕 시청이 가까이 있습니다."
+  }
+},
+{
+  id: "london", fish: 0.42, name: "런던", country: "영국", flag: "🇬🇧", since: 1863, start: "Oxford Circus",
+  system: "London Underground",
+  fact: "1863년 메트로폴리탄 철도가 패딩턴–패링던 구간을 열며 세계 최초의 지하철이 됐습니다.",
+  lines: [
+    { id: "C", name: "센트럴선", color: "#DC241F", st: ["Notting Hill Gate","Queensway","Lancaster Gate","Marble Arch","Bond Street","Oxford Circus","Tottenham Court Road","Holborn","Chancery Lane","St. Paul's","Bank","Liverpool Street","Bethnal Green","Mile End","Stratford"] },
+    { id: "V", name: "빅토리아선", color: "#0098D4", st: ["Brixton","Stockwell","Vauxhall","Pimlico","Victoria","Green Park","Oxford Circus","Warren Street","Euston","King's Cross St. Pancras","Highbury & Islington","Finsbury Park","Seven Sisters","Tottenham Hale","Blackhorse Road","Walthamstow Central"] },
+    { id: "P", name: "피카딜리선", color: "#0019A8", st: ["Hammersmith","Barons Court","Earl's Court","Gloucester Road","South Kensington","Knightsbridge","Hyde Park Corner","Green Park","Piccadilly Circus","Leicester Square","Covent Garden","Holborn","Russell Square","King's Cross St. Pancras","Caledonian Road","Holloway Road","Arsenal","Finsbury Park"] },
+    { id: "J", name: "주빌리선", color: "#868F98", st: ["Baker Street","Bond Street","Green Park","Westminster","Waterloo","Southwark","London Bridge","Bermondsey","Canada Water","Canary Wharf","North Greenwich","Canning Town","West Ham","Stratford"] }
+  ],
+  geo: {
+    "Notting Hill Gate":[51.509,-0.196],"Bond Street":[51.514,-0.149],"Oxford Circus":[51.515,-0.142],
+    "Holborn":[51.517,-0.120],"St. Paul's":[51.515,-0.098],"Bank":[51.513,-0.089],
+    "Liverpool Street":[51.518,-0.082],"Mile End":[51.525,-0.033],"Stratford":[51.541,-0.003],
+    "Brixton":[51.462,-0.115],"Vauxhall":[51.486,-0.124],"Victoria":[51.496,-0.144],"Green Park":[51.507,-0.143],"Euston":[51.528,-0.133],
+    "King's Cross St. Pancras":[51.530,-0.124],"Highbury & Islington":[51.546,-0.104],"Finsbury Park":[51.564,-0.106],"Walthamstow Central":[51.583,-0.020],
+    "Hammersmith":[51.492,-0.224],"Earl's Court":[51.492,-0.193],"South Kensington":[51.494,-0.174],"Knightsbridge":[51.501,-0.160],
+    "Piccadilly Circus":[51.510,-0.134],"Baker Street":[51.522,-0.157],"Westminster":[51.501,-0.125],
+    "Waterloo":[51.503,-0.113],"London Bridge":[51.505,-0.086],"Canada Water":[51.498,-0.050],"Canary Wharf":[51.503,-0.019],
+    "North Greenwich":[51.500,0.004],"West Ham":[51.528,0.005]
+  },
+  facts: {
+    "Baker Street": "1863년 세계 최초 지하철 구간에 있던 원래 역 중 하나로, 셜록 홈스 박물관이 근처에 있습니다.",
+    "King's Cross St. Pancras": "지하철 6개 노선이 서는 최대 환승역. 위층 킹스크로스역에는 '9¾ 승강장' 포토존이 있습니다.",
+    "Westminster": "빅벤과 국회의사당 바로 앞. 주빌리선 역사는 거대한 콘크리트 기둥 구조로 유명합니다.",
+    "Canary Wharf": "노먼 포스터가 설계한 대성당처럼 넓은 주빌리선 역입니다.",
+    "North Greenwich": "O2 아레나 바로 앞. 템스강 남쪽 그리니치 반도에 있습니다.",
+    "Bank": "잉글랜드 은행 아래에 있는 런던 금융가(시티)의 중심 역입니다."
+  }
+},
+{
+  id: "paris", fish: 0.5, name: "파리", country: "프랑스", flag: "🇫🇷", since: 1900, start: "Châtelet",
+  system: "Métro de Paris",
+  fact: "1900년 파리 만국박람회에 맞춰 1호선이 개통했습니다. 1호선은 2012년 무인 자동운전으로 전환됐습니다.",
+  lines: [
+    { id: "1", name: "1호선", color: "#FFCD00", st: ["La Défense","Esplanade de La Défense","Pont de Neuilly","Les Sablons","Porte Maillot","Argentine","Charles de Gaulle–Étoile","George V","Franklin D. Roosevelt","Champs-Élysées–Clemenceau","Concorde","Tuileries","Palais Royal–Musée du Louvre","Louvre–Rivoli","Châtelet","Hôtel de Ville","Saint-Paul","Bastille","Gare de Lyon","Reuilly–Diderot","Nation","Porte de Vincennes","Saint-Mandé","Bérault","Château de Vincennes"] },
+    { id: "4", name: "4호선", color: "#BE418D", st: ["Porte de Clignancourt","Simplon","Marcadet–Poissonniers","Château Rouge","Barbès–Rochechouart","Gare du Nord","Gare de l'Est","Château d'Eau","Strasbourg–Saint-Denis","Réaumur–Sébastopol","Étienne Marcel","Les Halles","Châtelet","Cité","Saint-Michel","Odéon","Saint-Germain-des-Prés","Saint-Sulpice","Saint-Placide","Montparnasse–Bienvenüe","Vavin","Raspail","Denfert-Rochereau","Mouton-Duvernet","Alésia","Porte d'Orléans"] },
+    { id: "6", name: "6호선", color: "#6ECA97", st: ["Charles de Gaulle–Étoile","Kléber","Boissière","Trocadéro","Passy","Bir-Hakeim","Dupleix","La Motte-Picquet–Grenelle","Cambronne","Sèvres–Lecourbe","Pasteur","Montparnasse–Bienvenüe","Edgar Quinet","Raspail","Denfert-Rochereau","Saint-Jacques","Glacière","Corvisart","Place d'Italie","Nationale","Chevaleret","Quai de la Gare","Bercy","Dugommier","Daumesnil","Bel-Air","Picpus","Nation"] }
+  ],
+  geo: {
+    "La Défense":[48.892,2.238],"Porte Maillot":[48.878,2.282],"Charles de Gaulle–Étoile":[48.874,2.295],"Franklin D. Roosevelt":[48.869,2.310],
+    "Concorde":[48.866,2.321],"Palais Royal–Musée du Louvre":[48.862,2.336],"Châtelet":[48.858,2.347],"Hôtel de Ville":[48.857,2.352],"Bastille":[48.853,2.369],
+    "Gare de Lyon":[48.845,2.373],"Nation":[48.848,2.396],"Château de Vincennes":[48.844,2.440],
+    "Porte de Clignancourt":[48.897,2.345],"Barbès–Rochechouart":[48.884,2.350],"Gare du Nord":[48.880,2.355],"Gare de l'Est":[48.876,2.358],
+    "Strasbourg–Saint-Denis":[48.869,2.354],"Les Halles":[48.862,2.346],"Cité":[48.855,2.347],"Saint-Michel":[48.853,2.344],
+    "Saint-Germain-des-Prés":[48.854,2.334],"Montparnasse–Bienvenüe":[48.843,2.323],"Raspail":[48.839,2.331],"Denfert-Rochereau":[48.834,2.332],
+    "Porte d'Orléans":[48.823,2.325],"Trocadéro":[48.863,2.287],"Bir-Hakeim":[48.854,2.289],"La Motte-Picquet–Grenelle":[48.849,2.298],
+    "Pasteur":[48.843,2.313],"Place d'Italie":[48.831,2.356],"Bercy":[48.840,2.379],"Daumesnil":[48.839,2.396]
+  },
+  facts: {
+    "Cité": "시테섬에 있는 유일한 메트로역. 노트르담 대성당이 걸어서 몇 분 거리입니다.",
+    "Bir-Hakeim": "6호선이 고가로 센강을 건너는 곳. 에펠탑이 가장 가까운 역 중 하나입니다.",
+    "Trocadéro": "샤요 궁 앞 광장에서 에펠탑 정면 전망을 볼 수 있습니다.",
+    "Concorde": "1호선 승강장 벽 타일에 '인간과 시민의 권리 선언' 글자가 새겨져 있습니다.",
+    "Palais Royal–Musée du Louvre": "루브르 박물관으로 바로 이어지는 역. 입구의 '야행자의 키오스크' 조형물이 유명합니다.",
+    "Gare du Nord": "유로스타가 출발하는, 유럽에서 가장 붐비는 기차역 중 하나입니다."
+  }
+},
+{
+  id: "hongkong", name: "홍콩", country: "중국 홍콩", flag: "🇭🇰", since: 1979, start: "Admiralty",
+  system: "MTR",
+  fact: "1979년 관당선 첫 구간이 개통했습니다. MTR은 정시운행률 99.9%를 넘는 것으로 유명합니다.",
+  lines: [
+    { id: "ISL", name: "아일랜드선", color: "#007DC5", st: ["Kennedy Town","HKU","Sai Ying Pun","Sheung Wan","Central","Admiralty","Wan Chai","Causeway Bay","Tin Hau","Fortress Hill","North Point","Quarry Bay","Tai Koo","Sai Wan Ho","Shau Kei Wan","Heng Fa Chuen","Chai Wan"] },
+    { id: "TWL", name: "취안완선", color: "#E2231A", st: ["Central","Admiralty","Tsim Sha Tsui","Jordan","Yau Ma Tei","Mong Kok","Prince Edward","Sham Shui Po","Cheung Sha Wan","Lai Chi Kok","Mei Foo","Lai King","Kwai Fong","Kwai Hing","Tai Wo Hau","Tsuen Wan"] },
+    { id: "KTL", name: "관당선", color: "#00AB4E", st: ["Whampoa","Ho Man Tin","Yau Ma Tei","Mong Kok","Prince Edward","Shek Kip Mei","Kowloon Tong","Lok Fu","Wong Tai Sin","Diamond Hill","Choi Hung","Kowloon Bay","Ngau Tau Kok","Kwun Tong","Lam Tin","Yau Tong","Tiu Keng Leng"] }
+  ],
+  geo: {
+    "Kennedy Town":[22.281,114.129],"Sheung Wan":[22.287,114.152],"Central":[22.282,114.158],"Admiralty":[22.279,114.165],
+    "Causeway Bay":[22.280,114.184],"North Point":[22.291,114.200],"Quarry Bay":[22.288,114.209],"Chai Wan":[22.265,114.237],
+    "Tsim Sha Tsui":[22.297,114.172],"Yau Ma Tei":[22.313,114.171],"Mong Kok":[22.319,114.169],"Prince Edward":[22.325,114.168],
+    "Sham Shui Po":[22.331,114.162],"Lai Chi Kok":[22.337,114.148],"Mei Foo":[22.338,114.138],"Lai King":[22.348,114.126],"Tsuen Wan":[22.374,114.118],
+    "Whampoa":[22.305,114.190],"Ho Man Tin":[22.309,114.183],"Shek Kip Mei":[22.332,114.169],"Kowloon Tong":[22.337,114.176],
+    "Wong Tai Sin":[22.342,114.194],"Diamond Hill":[22.340,114.201],"Kowloon Bay":[22.323,114.214],"Kwun Tong":[22.312,114.226],"Tiu Keng Leng":[22.304,114.253]
+  },
+  facts: {
+    "Admiralty": "아일랜드선·취안완선·남항도선·동철선이 만나는 홍콩 최대의 환승 허브입니다.",
+    "Tsim Sha Tsui": "빅토리아 하버 건너 홍콩섬 스카이라인이 보이는 침사추이 산책로가 가깝습니다.",
+    "Mong Kok": "세계에서 인구 밀도가 가장 높은 지역 중 하나. 레이디스 마켓이 있습니다.",
+    "Kennedy Town": "2014년 아일랜드선 서쪽 연장으로 문을 연 서쪽 종점입니다.",
+    "Wong Tai Sin": "향 연기가 끊이지 않는 웡타이신 사원 바로 앞입니다.",
+    "Central": "금융 중심가. 미드레벨 에스컬레이터와 스타페리 부두가 가깝습니다."
+  }
+}
+];
+
+/* =====================================================================
+   GRAPH + LAYOUT
+   ===================================================================== */
+const MIN_GAP = 34;   // 역 사이 최소 간격 (SVG 단위)
+const HOP_MIN = 2, XFER_MIN = 4;
+
+function buildCity(c) {
+  const nodes = new Map();
+  const adj = new Map();
+  const edges = [], edgeSeen = new Set(), services = [];
+  const node = (n) => {
+    if (!nodes.has(n)) { nodes.set(n, { name: n, lines: [], x: NaN, y: NaN, anchor: false }); adj.set(n, []); }
+    return nodes.get(n);
+  };
+  const lat0 = Object.values(c.geo)[0][0] * Math.PI / 180;
+  const proj = ([la, lo]) => [lo * Math.cos(lat0) * 1000, -la * 1000];
+
+  for (const L of c.lines) {
+    L.segs = L.segs || [L.loop ? [...L.st, L.st[0]] : L.st];
+    L.all = [...new Set(L.segs.flat())];
+    for (const seq of L.segs) {
+      seq.forEach(n => { const o = node(n); if (!o.lines.includes(L.id)) o.lines.push(L.id); });
+      for (let i = 0; i < seq.length - 1; i++) {
+        const k = [seq[i], seq[i + 1]].sort().join("\u0002") + "\u0002" + L.id;   // services overlap: draw each track once
+        if (edgeSeen.has(k)) continue; edgeSeen.add(k);
+        edges.push({ a: seq[i], b: seq[i + 1], line: L.id });
+        adj.get(seq[i]).push({ to: seq[i + 1], line: L.id });
+        adj.get(seq[i + 1]).push({ to: seq[i], line: L.id });
+      }
+      // a line whose whole length is covered by a through service runs only as that through train
+      const joined = "\u0001" + seq.join("\u0001") + "\u0001", rev = "\u0001" + [...seq].reverse().join("\u0001") + "\u0001";
+      const covered = (c.through || []).some(t => { const ts = "\u0001" + t.seq.join("\u0001") + "\u0001"; return ts.includes(joined) || ts.includes(rev); });
+      if (!covered) services.push({ line: L.id, seq, lines: seq.slice(1).map(() => L.id), loop: seq.length > 2 && seq[0] === seq[seq.length - 1], loopNames: L.loopNames });
+    }
+  }
+  // positions are computed on first visit (Seoul alone has 560 stations)
+  let laidOut = false;
+  const layout = () => {
+  if (laidOut) return; laidOut = true;
+  // anchors
+  for (const [n, g] of Object.entries(c.geo)) {
+    if (!nodes.has(n)) { console.warn("geo for unknown station", c.id, n); continue; }
+    const [x, y] = proj(g); const o = nodes.get(n); o.x = x; o.y = y; o.anchor = true;
+  }
+  // interpolate along lines
+  for (const L of c.lines) for (const seq of L.segs) {
+    const idx = seq.map((n, i) => nodes.get(n).anchor ? i : -1).filter(i => i >= 0);
+    if (idx[0] !== 0 || idx[idx.length - 1] !== seq.length - 1) console.warn("line ends not anchored", c.id, L.id);
+    for (let k = 0; k < idx.length - 1; k++) {
+      const i = idx[k], j = idx[k + 1], A = nodes.get(seq[i]), B = nodes.get(seq[j]);
+      for (let m = i + 1; m < j; m++) {
+        const o = nodes.get(seq[m]); if (!isNaN(o.x)) continue;
+        const t = (m - i) / (j - i); o.x = A.x + (B.x - A.x) * t; o.y = A.y + (B.y - A.y) * t;
+      }
+    }
+  }
+  const list = [...nodes.values()];
+  // fisheye: spread dense center, pull in far suburbs
+  const xs = list.filter(o => o.lines.length > 1);
+  const cx = xs.reduce((s, o) => s + o.x, 0) / xs.length, cy = xs.reduce((s, o) => s + o.y, 0) / xs.length;
+  let maxR = 0; list.forEach(o => { maxR = Math.max(maxR, Math.hypot(o.x - cx, o.y - cy)); });
+  list.forEach(o => {
+    const dx = o.x - cx, dy = o.y - cy, r = Math.hypot(dx, dy) || 1e-9;
+    const r2 = Math.pow(r / maxR, c.fish || 0.62) * 560;
+    o.x = dx / r * r2; o.y = dy / r * r2;
+  });
+  // relax: even out spacing (edge springs + repulsion + weak pull to geographic spot)
+  const L0 = MIN_GAP * 1.45;
+  // scale so the median track segment roughly matches the spring length
+  const lens = edges.map(e => { const a = nodes.get(e.a), b = nodes.get(e.b); return Math.hypot(b.x - a.x, b.y - a.y); }).sort((p, q) => p - q);
+  const med = lens[Math.floor(lens.length / 2)] || 1;
+  // geo layout: keep the real map, scaled so a typical central hop is about one spring length
+  const sc = c.geoLayout ? L0 * 1.1 / (lens[Math.floor(lens.length * 0.25)] || 1) : Math.max(1, L0 / med);
+  list.forEach(o => { o.x *= sc; o.y *= sc; o.gx = o.x; o.gy = o.y; });
+  for (let it = 0; it < 500; it++) {
+    const cool = 1 - it / 500;
+    if (!c.geoLayout) for (const e of edges) {
+      const a = nodes.get(e.a), b = nodes.get(e.b); const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1e-6;
+      const f = (d - L0) * 0.12 * cool, ux = dx / d, uy = dy / d;
+      a.x += ux * f; a.y += uy * f; b.x -= ux * f; b.y -= uy * f;
+    }
+    // spatial grid so 500+ stations stay fast
+    const R = MIN_GAP * 1.25, grid = new Map();
+    list.forEach((o, i) => { const k = Math.floor(o.x / R) + "," + Math.floor(o.y / R); (grid.get(k) || grid.set(k, []).get(k)).push(i); });
+    for (let i = 0; i < list.length; i++) {
+      const a = list[i], gx = Math.floor(a.x / R), gy = Math.floor(a.y / R);
+      for (let ox = -1; ox <= 1; ox++) for (let oy = -1; oy <= 1; oy++) {
+        const cell = grid.get((gx + ox) + "," + (gy + oy)); if (!cell) continue;
+        for (const j of cell) {
+          if (j <= i) continue;
+          const b = list[j]; let dx = b.x - a.x, dy = b.y - a.y; let d = Math.hypot(dx, dy);
+          if (d < 1e-6) { dx = 1; dy = 0.3; d = 1; }
+          if (d < R) {
+            const push = (R - d) / 2 * 0.8, ux = dx / d, uy = dy / d;
+            a.x -= ux * push; a.y -= uy * push; b.x += ux * push; b.y += uy * push;
+          }
+        }
+      }
+    }
+    const k = c.geoLayout ? 0.05 : 0.02 * cool + 0.004;
+    list.forEach(o => { o.x += (o.gx - o.x) * k; o.y += (o.gy - o.y) * k; });
+  }
+  // label placement: perpendicular to local track, pointing away from centre
+  let mx = 0, my = 0; list.forEach(o => { mx += o.x; my += o.y; }); mx /= list.length; my /= list.length;
+  for (const o of list) {
+    const nb = adj.get(o.name); let dx = 0, dy = 0;
+    nb.forEach(e => { const t = nodes.get(e.to); const vx = t.x - o.x, vy = t.y - o.y, d = Math.hypot(vx, vy) || 1;
+      // fold direction so opposite neighbours add up rather than cancel
+      let ux = vx / d, uy = vy / d; if (ux < 0 || (ux === 0 && uy < 0)) { ux = -ux; uy = -uy; } dx += ux; dy += uy; });
+    let px = -dy, py = dx; const pl = Math.hypot(px, py) || 1; px /= pl; py /= pl;
+    if (px * (o.x - mx) + py * (o.y - my) < 0) { px = -px; py = -py; }
+    if (Math.abs(px) < .2 && Math.abs(py) < .2) { px = 1; py = 0; }
+    o.lx = px; o.ly = py;
+  }
+  };
+  // 직통 운행: 회사 경계를 넘어 그대로 달리는 열차 (구간마다 노선이 다름)
+  for (const t of (c.through || [])) services.push({ line: t.lines[0], seq: t.seq, lines: t.lines, loop: false, name: t.name });
+  const lineById = Object.fromEntries(c.lines.map(L => [L.id, L]));
+  const walkAdj = new Map();   // 이름이 다른 역끼리 걸어서 갈아타는 통로
+  for (const [a, b, min] of (c.walks || [])) {
+    (walkAdj.get(a) || walkAdj.set(a, []).get(a)).push({ to: b, min });
+    (walkAdj.get(b) || walkAdj.set(b, []).get(b)).push({ to: a, min });
+  }
+  return { ...c, nodes, adj, edges, services, lineById, walkAdj, total: nodes.size, layout };
+}
+const WORLD = Object.fromEntries(CITIES.map(c => [c.id, buildCity(c)]));
+const LABELS = Object.assign({}, ...CITIES.map(c => c.labels || {}));
+
+/* time-optimal routes over (station, line) states — binary heap Dijkstra */
+function routeSearch(city, from, startLine, to) {
+  const key = (st, l) => st + "\u0001" + (l || "");
+  const dist = new Map(), prev = new Map(), best = new Map();   // best: station -> [time, stateKey]
+  const heap = [];
+  const push = (it) => { heap.push(it); let i = heap.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } };
+  const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top; };
+  const k0 = key(from, startLine); dist.set(k0, 0); push([0, from, startLine || null, k0]);
+  while (heap.length) {
+    const [d, st, l, k] = pop();
+    if (d > dist.get(k)) continue;
+    if (!best.has(st)) best.set(st, [d, k]);
+    if (st === to) break;
+    for (const e of city.adj.get(st)) {
+      const nd = d + HOP_MIN + (l && l !== e.line ? XFER_MIN : 0), nk = key(e.to, e.line);
+      if (nd < (dist.get(nk) ?? Infinity)) { dist.set(nk, nd); prev.set(nk, [st, l, k]); push([nd, e.to, e.line, nk]); }
+    }
+    for (const w of (city.walkAdj.get(st) || [])) {   // walking already includes the transfer
+      const nd = d + w.min, nk = key(w.to, null);
+      if (nd < (dist.get(nk) ?? Infinity)) { dist.set(nk, nd); prev.set(nk, [st, l, k]); push([nd, w.to, null, nk]); }
+    }
+  }
+  const pathTo = (target) => {
+    const b = best.get(target); if (!b) return null;
+    const path = [target]; let k = b[1];
+    while (prev.has(k)) { const [st, , pk] = prev.get(k); path.unshift(st); k = pk; }
+    return { time: b[0], path };
+  };
+  return { best, pathTo };
+}
+function bestRoute(city, from, to, startLine) { return routeSearch(city, from, startLine, to).pathTo(to); }
+
+/* =====================================================================
+   STATE (저장: localStorage, 실패해도 게임은 동작)
+   ===================================================================== */
+const SAVE_KEY = "metro-world-pass-v1";
+let S = { score: 0, visited: {}, badges: {}, pos: {}, log: [], sound: false, speed: 1 };
+try { const raw = localStorage.getItem(SAVE_KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch (e) {}
+function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} }
+
+let city = null;     // built city
+let P = null;        // S.pos[city.id]
+let selected = null; // station name for info panel
+let showRoute = false;
+
+const $ = (id) => document.getElementById(id);
+const label = (n) => { const s = String(n); return LABELS[s] || s.split("#")[0]; };   // "양평#중앙" -> "양평", "梅田" -> "우메다"
+const orig = (n) => { const s = String(n); return LABELS[s] && LABELS[s] !== s ? s.split("#")[0] : ""; };   // 현지 표기
+const nm = (n) => esc(label(n));
+const esc = (s) => String(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+const fmtClock = (m) => { const t = 6 * 60 + m; const h = Math.floor(t / 60) % 24, mm = t % 60; return String(h).padStart(2, "0") + ":" + String(mm).padStart(2, "0"); };
+const visitedSet = (cid) => (S.visited[cid] = S.visited[cid] || {});
+const stampCount = () => Object.values(S.visited).reduce((s, v) => s + Object.keys(v).length, 0);
+const chip = (L) => `<span class="chip"><i style="background:${L.color}"></i>${esc(L.name)}</span>`;
+
+/* ---------- sound ---------- */
+let actx = null;
+function chime(kind) {
+  if (!S.sound) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const notes = kind === "win" ? [659, 784, 988, 1319] : kind === "new" ? [784, 988] : kind === "door" ? [880, 698] : [660];
+    notes.forEach((f, i) => {
+      const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + i * 0.12;
+      o.type = "sine"; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.18, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+      o.connect(g).connect(actx.destination); o.start(t); o.stop(t + 0.4);
+    });
+  } catch (e) {}
+}
+
+/* ---------- toasts ---------- */
+function toast(html, big) {
+  const el = document.createElement("div"); el.className = "toast" + (big ? " big" : ""); el.innerHTML = html;
+  $("toasts").appendChild(el); setTimeout(() => el.remove(), big ? 3600 : 2400);
+  while ($("toasts").children.length > 3) $("toasts").firstChild.remove();
+}
+function addLog(html) { S.log.unshift(html); S.log = S.log.slice(0, 8); }
+
+/* =====================================================================
+   HOME
+   ===================================================================== */
+function renderStats() {
+  $("sScore").textContent = S.score.toLocaleString("ko-KR");
+  $("sStamps").textContent = stampCount();
+  $("sBadges").textContent = Object.keys(S.badges).length;
+  $("soundBtn").textContent = S.sound ? "소리 켜짐" : "소리 꺼짐";
+  $("soundBtn").setAttribute("aria-pressed", String(S.sound));
+}
+function renderHome() {
+  $("cityGrid").innerHTML = CITIES.map(c0 => {
+    const c = WORLD[c0.id], v = Object.keys(visitedSet(c.id)).length, pct = Math.round(v / c.total * 100);
+    return `<button class="city-card" data-city="${c.id}">
+      <div class="city-sign"><span class="flag">${c.flag}</span>
+        <div><div class="nm">${esc(c.name)}</div><div class="sub">${esc(c.country)} · ${esc(c.system)}</div></div>
+        <div class="yr">${c.since}<br>개통</div></div>
+      <div class="city-body">
+        <div class="line-chips">${c.lines.map(chip).join("")}</div>
+        <div style="font-size:13px">${esc(c.fact)}</div>
+        <div class="progress"><div style="width:${pct}%"></div></div>
+        <div class="prog-row"><span>방문 ${v} / ${c.total}역</span><span>${pct}%</span></div>
+      </div></button>`;
+  }).join("");
+  $("cityGrid").querySelectorAll(".city-card").forEach(b => b.onclick = () => enterCity(b.dataset.city));
+}
+function showHome() {
+  stopRide();
+  city = null; $("game").hidden = true; $("home").hidden = false; $("crumb").innerHTML = "";
+  renderHome(); renderStats(); try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+}
+
+/* =====================================================================
+   CITY / MAP
+   ===================================================================== */
+const svgNS = "http://www.w3.org/2000/svg";
+const mk = (tag, attrs, parent) => { const e = document.createElementNS(svgNS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+let searchIndex = new Map();
+let view = { s: 1, x: 0, y: 0 }, worldG, routeG, stG, meG, bounds;
+
+function enterCity(id) {
+  stopRide();
+  city = WORLD[id];
+  city.layout();
+  follow = true; opts = [];
+  S.pos[id] = S.pos[id] || { cur: city.start, line: null, minutes: 0, mission: null };
+  P = S.pos[id];
+  if (!city.nodes.has(P.cur)) P.cur = city.start;
+  selected = null; showRoute = false;
+  markVisited(P.cur, true);
+  if (!P.mission) newMission(true);
+  $("home").hidden = true; $("game").hidden = false;
+  $("crumb").innerHTML = `${city.flag} <b>${esc(city.name)}</b> · ${esc(city.system)}`;
+  $("legend").innerHTML = city.lines.length <= 6 ? city.lines.map(chip).join("") : "";
+  searchIndex = new Map();
+  for (const o of city.nodes.values()) {
+    const v = label(o.name) + (orig(o.name) ? ` (${orig(o.name)})` : "") + " · " + o.lines.map(l => city.lineById[l].name).join(", ");
+    searchIndex.set(v, o.name);
+  }
+  $("stList").innerHTML = [...searchIndex.keys()].sort((a, b) => a.localeCompare(b, "ko")).map(v => `<option value="${esc(v)}"></option>`).join("");
+  $("stSearch").value = "";
+  drawMap(); startView(); renderPanel(); renderStats(); save();
+  try { history.replaceState(null, "", "#" + id); } catch (e) {}
+}
+
+function drawMap() {
+  const svg = $("map"); svg.innerHTML = "";
+  const list = [...city.nodes.values()];
+  const pad = 90;
+  bounds = { x0: Math.min(...list.map(o => o.x)) - pad, y0: Math.min(...list.map(o => o.y)) - pad,
+             x1: Math.max(...list.map(o => o.x)) + pad, y1: Math.max(...list.map(o => o.y)) + pad };
+  worldG = mk("g", {}, svg);
+  routeG = mk("g", {}, worldG);
+  const edgeG = mk("g", {}, worldG);
+  // parallel offset for shared segments
+  const groups = new Map();
+  city.edges.forEach(e => { const k = [e.a, e.b].sort().join("\u0002"); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(e); });
+  for (const es of groups.values()) {
+    es.forEach((e, i) => {
+      const a = city.nodes.get(e.a), b = city.nodes.get(e.b), dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1;
+      let px = -dy / d, py = dx / d; if (e.a > e.b) { px = -px; py = -py; }
+      const off = (i - (es.length - 1) / 2) * 7.5;
+      mk("line", { x1: a.x + px * off, y1: a.y + py * off, x2: b.x + px * off, y2: b.y + py * off,
+        stroke: city.lineById[e.line].color, class: "edge", "data-line": e.line }, edgeG);
+    });
+  }
+  for (const [a, b] of (city.walks || [])) {
+    const p = city.nodes.get(a), q = city.nodes.get(b);
+    mk("line", { x1: p.x, y1: p.y, x2: q.x, y2: q.y, class: "walk-link" }, edgeG);
+  }
+  stG = mk("g", {}, worldG);
+  for (const o of list) {
+    const g = mk("g", { class: "st" + (o.lines.length > 1 ? " xfer" : ""), "data-st": o.name, transform: `translate(${o.x},${o.y})` }, stG);
+    mk("circle", { r: 13, class: "halo" }, g);
+    mk("circle", { r: o.lines.length > 1 ? 7.5 : 5.5, class: "dot" }, g);
+    const t = mk("text", { x: o.lx * 14, y: o.ly * 14 + 4 }, g);
+    t.setAttribute("text-anchor", o.lx > 0.35 ? "start" : o.lx < -0.35 ? "end" : "middle");
+    if (Math.abs(o.lx) <= 0.35) t.setAttribute("y", o.ly > 0 ? 22 : -14);
+    t.textContent = label(o.name);
+    const title = mk("title", {}, g); title.textContent = label(o.name);
+  }
+  meG = mk("g", { "pointer-events": "none" }, worldG);
+  buildTrain();
+  refreshMap();
+}
+
+function refreshMap() {
+  if (!city) return;
+  const vis = visitedSet(city.id);
+  const nextSet = new Set();
+  if (mode === "station") opts.forEach(o => nextSet.add(o.next));
+  else if (ride) { const j = stepIdx(ride.sv, ride.idx, ride.dir); if (j >= 0) nextSet.add(ride.sv.seq[j]); }
+  stG.querySelectorAll(".st").forEach(g => {
+    const n = g.dataset.st;
+    g.classList.toggle("visited", !!vis[n]);
+    g.classList.toggle("adj", nextSet.has(n));
+    g.classList.toggle("key", n === P.cur || n === selected || nextSet.has(n) || (P.mission && P.mission.state === "active" && n === P.mission.target) || city.nodes.get(n).lines.length >= 3);
+  });
+  // route hint
+  routeG.innerHTML = "";
+  if (showRoute && P.mission && P.mission.state === "active") {
+    const r = bestRoute(city, P.cur, P.mission.target, P.line);
+    if (r) mk("polyline", { class: "route", points: r.path.map(n => { const o = city.nodes.get(n); return o.x + "," + o.y; }).join(" ") }, routeG);
+  }
+  // markers
+  meG.innerHTML = "";
+  if (P.mission && P.mission.state === "active") {
+    const t = city.nodes.get(P.mission.target);
+    mk("circle", { cx: t.x, cy: t.y, r: 14, class: "target-ring" }, meG);
+    mk("path", { d: `M${t.x} ${t.y - 12} v-22 l14 6 l-14 6`, class: "target-flag" }, meG);
+    mk("line", { x1: t.x, y1: t.y - 12, x2: t.x, y2: t.y - 34, stroke: "var(--bad)", "stroke-width": 2 }, meG);
+  }
+  if (selected && selected !== P.cur) { const o = city.nodes.get(selected); mk("circle", { cx: o.x, cy: o.y, r: 17, class: "sel-ring" }, meG); }
+  if (ride) return;   // the player is inside the train
+  const me = city.nodes.get(P.cur);
+  const tok = mk("g", { id: "token", transform: `translate(${me.x},${me.y})` }, meG);
+  mk("circle", { r: 12, class: "pulse" }, tok);
+  mk("circle", { r: 11, class: "me-ring" }, tok);
+  const gl = mk("text", { class: "me-glyph", "text-anchor": "middle", y: 4.5 }, tok); gl.textContent = "M";
+}
+
+/* ---------- pan / zoom ---------- */
+function applyView() {
+  worldG.setAttribute("transform", `translate(${view.x},${view.y}) scale(${view.s})`);
+  const svg = $("map"); svg.dataset.zoom = view.s < 0.42 ? "far" : view.s < 0.72 ? "mid" : "near";
+  svg.style.setProperty("--inv", (0.85 / view.s).toFixed(3));
+}
+function svgSize() { const r = $("map").getBoundingClientRect(); return { w: r.width || 800, h: r.height || 600 }; }
+function fitView() {
+  const { w, h } = svgSize(), bw = bounds.x1 - bounds.x0, bh = bounds.y1 - bounds.y0;
+  view.s = Math.min(w / bw, h / bh); view.x = (w - bw * view.s) / 2 - bounds.x0 * view.s; view.y = (h - bh * view.s) / 2 - bounds.y0 * view.s;
+  view.s = Math.max(view.s, 0.25); applyView();
+}
+function startView() {
+  fitView();
+  if (view.s < 0.75) centerOn(P.cur, 0.85);  // small screens: start close to the player
+}
+function zoomAt(f, px, py) {
+  const ns = Math.min(4, Math.max(0.2, view.s * f)); const k = ns / view.s;
+  view.x = px - (px - view.x) * k; view.y = py - (py - view.y) * k; view.s = ns; applyView();
+}
+function centerOn(n, minScale) {
+  const o = city.nodes.get(n), { w, h } = svgSize();
+  if (minScale && view.s < minScale) view.s = minScale;
+  view.x = w / 2 - o.x * view.s; view.y = h / 2 - o.y * view.s; applyView();
+}
+function ensureVisible(n) {
+  const o = city.nodes.get(n), { w, h } = svgSize(), sx = o.x * view.s + view.x, sy = o.y * view.s + view.y, m = 50;
+  if (sx < m || sy < m || sx > w - m || sy > h - m) centerOn(n);
+}
+(function setupPanZoom() {
+  const wrap = $("mapWrap"), pts = new Map(); let start = null, moved = false, pinch = null;
+  wrap.addEventListener("pointerdown", (e) => {
+    if (e.target.closest(".map-ctrl, .map-search")) return;
+    wrap.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    moved = false; start = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, target: e.target };
+    if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), s: view.s }; }
+  });
+  wrap.addEventListener("pointermove", (e) => {
+    if (!pts.has(e.pointerId) || !start) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pts.size === 2 && pinch) {
+      const [a, b] = [...pts.values()], r = $("map").getBoundingClientRect();
+      const d = Math.hypot(a.x - b.x, a.y - b.y); moved = true;
+      zoomAt((pinch.s * d / pinch.d) / view.s, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top); return;
+    }
+    const dx = e.clientX - start.x, dy = e.clientY - start.y;
+    if (Math.hypot(dx, dy) > 5) { moved = true; follow = false; wrap.classList.add("dragging"); }
+    if (moved) { view.x = start.vx + dx; view.y = start.vy + dy; applyView(); }
+  });
+  const end = (e) => {
+    if (!pts.has(e.pointerId)) return;
+    pts.delete(e.pointerId); wrap.classList.remove("dragging");
+    if (pts.size < 2) pinch = null;
+    if (pts.size === 0 && start && !moved && e.type === "pointerup") {
+      const g = start.target.closest && start.target.closest(".st"); if (g) onStationClick(g.dataset.st);
+    }
+    if (pts.size === 0) start = null;
+    else { const p = [...pts.values()][0]; start = { x: p.x, y: p.y, vx: view.x, vy: view.y, target: start.target }; }
+  };
+  wrap.addEventListener("pointerup", end); wrap.addEventListener("pointercancel", end);
+  wrap.addEventListener("wheel", (e) => { e.preventDefault(); const r = $("map").getBoundingClientRect(); zoomAt(Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+  const mid = () => { const { w, h } = svgSize(); return [w / 2, h / 2]; };
+  $("zIn").onclick = () => zoomAt(1.3, ...mid());
+  $("zOut").onclick = () => zoomAt(1 / 1.3, ...mid());
+  $("zMe").onclick = () => { follow = true; centerOn(P.cur, 1.2); };
+  $("zFit").onclick = () => fitView();
+  window.addEventListener("resize", () => { if (city) startView(); });
+})();
+
+/* =====================================================================
+   GAMEPLAY — 승강장에서 열차 고르기 → 기다리기 → 탑승 → 정차/통과 → 하차·환승
+   ===================================================================== */
+const RIDE = { walkMs: 2400, waitMs: 1500, arriveMs: 1100, dwellMs: 1900 };
+let mode = "station";     // station | walking | waiting | boarding | riding | dwell
+let ride = null;          // { sv, idx, dir, line, head, alightNext }
+let pending = null;       // option being taken while walking / waiting
+let timers = [], rafId = 0, follow = true;
+const reduceMotion = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+const later = (ms, fn) => { const t = setTimeout(fn, ms / (S.speed || 1)); timers.push(t); return t; };
+function stopRide() { timers.forEach(clearTimeout); timers = []; if (rafId) cancelAnimationFrame(rafId); rafId = 0; mode = "station"; ride = null; pending = null; hideTrain(); }
+/* 받침이 없거나 ㄹ받침이면 '로', 아니면 '으로' (숫자로 끝나면 읽는 소리 기준) */
+const ro = (w) => { const c = w.charCodeAt(w.length - 1);
+  if (c >= 0xAC00 && c <= 0xD7A3) { const j = (c - 0xAC00) % 28; return j === 0 || j === 8 ? "로" : "으로"; }
+  return /[1378]$/.test(w) ? "로" : /[0-9]$/.test(w) ? "으로" : "로"; };
+const stationWord = (n) => { const l = label(n); return /역$/.test(l) ? l : l + "역"; };
+const textOn = (hex) => { const h = hex.replace("#", ""), r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16); return (0.299 * r + 0.587 * g + 0.114 * b) > 170 ? "#16202A" : "#FFFFFF"; };
+const badge = (L) => `<span class="badge${L.short && L.short.length > 2 ? " wide" : ""}" style="background:${L.color};color:${textOn(L.color)}">${esc(L.short || L.name.replace(/선$|호선$/, ""))}</span>`;
+
+function markVisited(n, silent) {
+  const vis = visitedSet(city.id);
+  if (vis[n]) return false;
+  vis[n] = Date.now();
+  if (!silent) { S.score += 10; addLog(`새 스탬프 <b>${nm(n)}</b> <span class="pts">+10</span>`); }
+  for (const lid of city.nodes.get(n).lines) {
+    const L = city.lineById[lid], key = city.id + ":" + lid;
+    if (!S.badges[key] && L.all.every(s => vis[s])) {
+      S.badges[key] = Date.now(); S.score += 100;
+      addLog(`노선 완주 배지 <b>${esc(L.name)}</b> <span class="pts">+100</span>`);
+      toast(`🏅 <b>${esc(city.name)} ${esc(L.name)}</b> 전 역 방문! 노선 배지 +100`, true); chime("win");
+    }
+  }
+  const ck = city.id + ":ALL";
+  if (!S.badges[ck] && Object.keys(vis).length >= city.total) {
+    S.badges[ck] = Date.now(); S.score += 300;
+    addLog(`도시 정복 <b>${esc(city.name)}</b> <span class="pts">+300</span>`);
+    toast(`🌏 <b>${esc(city.name)}</b>의 모든 역을 탐험했습니다! +300`, true); chime("win");
+  }
+  return true;
+}
+
+/* ---------- missions ---------- */
+const mUsed = (M) => P.minutes - (M.start ?? (P.minutes - (M.used || 0)));
+function newMission(silent) {
+  const names = [...city.nodes.keys()].filter(n => n !== P.cur);
+  const vis = visitedSet(city.id);
+  const rs = routeSearch(city, P.cur, P.line);
+  let pool = names.map(n => ({ n, r: rs.pathTo(n) })).filter(o => o.r && o.r.path.length >= 4);
+  const near = pool.filter(o => o.r.path.length <= 17); if (near.length) pool = near;
+  const unv = pool.filter(o => !vis[o.n]); if (unv.length) pool = unv;
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  const par = pick.r.time;
+  P.mission = { target: pick.n, par, limit: Math.ceil(par * 1.3) + 8, start: P.minutes, state: "active" };
+  showRoute = false;
+  if (!silent) toast(`새 미션: <b>${nm(pick.n)}</b>에서 내리기 · 제한 ${P.mission.limit}분`);
+}
+function tickMission() {
+  const M = P.mission;
+  if (M && M.state === "active" && mUsed(M) > M.limit && !M.lateNotified) { M.lateNotified = true; toast(`⏰ 제한 시간 초과! 그래도 도착하면 <b>+10</b>`); }
+}
+function checkMissionArrival() {
+  const M = P.mission;
+  if (!M || M.state !== "active" || P.cur !== M.target) return;
+  const used = mUsed(M), onTime = used <= M.limit, bonus = onTime ? 50 + (M.limit - used) * 5 : 10;
+  S.score += bonus; M.state = onTime ? "done" : "late-done"; M.used = used;
+  addLog(`미션 ${onTime ? "성공" : "지각 도착"} <b>${nm(P.cur)}</b> <span class="pts">+${bonus}</span>`);
+  toast(onTime ? `🎯 미션 성공! <b>${nm(P.cur)}</b> · ${used}분 / 제한 ${M.limit}분 · <b>+${bonus}</b>` : `늦었지만 도착! <b>${nm(P.cur)}</b> · +${bonus}`, true);
+  chime(onTime ? "win" : "new");
+}
+
+/* ---------- train services ---------- */
+function stepIdx(sv, i, dir) {
+  const n = sv.seq.length; let j = i + dir;
+  if (sv.loop) { if (j < 0) j = n - 2; if (j > n - 1) j = 1; return j; }
+  return j < 0 || j > n - 1 ? -1 : j;
+}
+function hopLine(sv, i, j) {   // line of the track between seq[i] and seq[j]
+  const n = sv.seq.length;
+  if (j === i + 1) return sv.lines[i];
+  if (j === i - 1) return sv.lines[j];
+  return i === n - 1 || j === 1 ? sv.lines[0] : sv.lines[n - 2];   // loop wrap-around
+}
+function loopHead(sv, dir) {
+  if (sv.loopNames) return sv.loopNames[dir > 0 ? 0 : 1];
+  if (sv.cw === undefined) {   // signed area in screen coords (y down): > 0 means clockwise
+    let a = 0; for (let i = 0; i < sv.seq.length - 1; i++) { const p = city.nodes.get(sv.seq[i]), q = city.nodes.get(sv.seq[i + 1]); a += p.x * q.y - q.x * p.y; }
+    sv.cw = a > 0;
+  }
+  return (sv.cw === (dir > 0)) ? "시계방향 순환" : "반시계방향 순환";
+}
+function boardOptions(st) {
+  const out = [], seen = new Set();
+  for (const sv of city.services) {
+    const seq = sv.seq, n = seq.length;
+    seq.forEach((s, i) => {
+      if (s !== st || (sv.loop && i === n - 1)) return;
+      for (const dir of [1, -1]) {
+        const j = stepIdx(sv, i, dir); if (j < 0) continue;
+        const head = sv.loop ? loopHead(sv, dir) : label(dir > 0 ? seq[n - 1] : seq[0]) + "행";
+        const line = hopLine(sv, i, j);
+        const key = line + "|" + seq[j] + "|" + head;
+        if (seen.has(key)) continue; seen.add(key);
+        const k = stepIdx(sv, i, -dir);
+        const thru = sv.name && new Set(dir > 0 ? sv.lines.slice(i) : sv.lines.slice(0, i)).size > 1 ? sv.name : "";
+        out.push({ sv, idx: i, dir, line, L: city.lineById[line], next: seq[j], prev: k >= 0 ? seq[k] : null, head, thru });
+      }
+    });
+  }
+  const order = (o) => (o.line === P.line ? -1 : city.lines.indexOf(o.L));
+  out.sort((a, b) => order(a) - order(b));
+  for (const w of (city.walkAdj.get(st) || [])) out.push({ walk: true, next: w.to, min: w.min, head: stationWord(w.to) + "까지 걸어가기" });
+  return out;
+}
+function upcoming(count) {
+  const list = []; let i = ride.idx;
+  list.push({ st: ride.sv.seq[i], here: true });
+  for (let c = 0; c < count; c++) { i = stepIdx(ride.sv, i, ride.dir); if (i < 0) break; list.push({ st: ride.sv.seq[i] }); }
+  if (stepIdx(ride.sv, ride.idx, ride.dir) >= 0 && list.length && !ride.sv.loop) {
+    const lastIdx = ride.dir > 0 ? ride.sv.seq.length - 1 : 0;
+    list.forEach(o => { if (o.st === ride.sv.seq[lastIdx]) o.end = true; });
+  }
+  return list;
+}
+
+/* ---------- the journey ---------- */
+let opts = [];
+function takeOption(opt) {
+  if (mode !== "station") return;
+  selected = null; showRoute = false;
+  pending = opt;
+  if (opt.walk) {
+    mode = "walking"; P.minutes += opt.min; tickMission();
+    renderPanel(); refreshMap(); chime("hop");
+    later(RIDE.walkMs, () => {
+      P.cur = opt.next; P.line = null; pending = null; mode = "station";
+      if (markVisited(P.cur)) toast(`📮 새 스탬프 <b>${nm(P.cur)}</b> +10`);
+      checkMissionArrival(); follow = true; centerOn(P.cur);
+      renderPanel(); refreshMap(); renderStats(); save();
+    });
+    return;
+  }
+  if (P.line && opt.line !== P.line) {
+    mode = "walking"; P.minutes += XFER_MIN; tickMission();
+    renderPanel(); refreshMap(); chime("hop");
+    later(RIDE.walkMs, waitTrain);
+  } else waitTrain();
+}
+function waitTrain() {
+  mode = "waiting"; pending.wait = 1 + Math.floor(Math.random() * 3);
+  P.minutes += pending.wait; tickMission();
+  renderPanel(); refreshMap();
+  later(RIDE.waitMs, trainArrives);
+}
+function trainArrives() {
+  const opt = pending; pending = null;
+  ride = { sv: opt.sv, idx: opt.idx, dir: opt.dir, line: opt.line, head: opt.head, alightNext: false };
+  P.line = opt.line; mode = "boarding"; follow = true;
+  showTrain(opt.L.color);
+  const here = city.nodes.get(P.cur), k = stepIdx(opt.sv, opt.idx, -opt.dir);
+  const pv = k >= 0 ? city.nodes.get(opt.sv.seq[k]) : { x: here.x - 40, y: here.y };
+  const from = { x: here.x + (pv.x - here.x) * 0.55, y: here.y + (pv.y - here.y) * 0.55 };
+  if (view.s < 0.9) { view.s = 0.9; }
+  renderPanel(); refreshMap();
+  animateTrain(from, here, RIDE.arriveMs, () => {
+    doors(true); chime("door");
+    later(RIDE.dwellMs, () => { if (mode === "boarding") depart(); });
+  }, from.x === here.x && from.y === here.y ? 0 : undefined);
+}
+function depart() {
+  const j = stepIdx(ride.sv, ride.idx, ride.dir);
+  if (j < 0) { alight(true); return; }
+  const M = P.mission;
+  if (M && M.state === "active" && P.cur === M.target) toast(`😱 <b>${nm(P.cur)}</b>을(를) 지나쳤어요! 다음 역에서 내려 돌아가세요`);
+  doors(false); mode = "riding"; renderPanel(); refreshMap();
+  const hl = hopLine(ride.sv, ride.idx, j);
+  if (hl !== ride.line) {   // through train crossing onto another company's line
+    const L = city.lineById[hl];
+    toast(`🔁 이 열차는 <b>${esc(L.name)}</b>으로 직통 운행합니다`);
+    ride.line = hl; P.line = hl; showTrain(L.color); renderPanel();
+  }
+  const a = city.nodes.get(ride.sv.seq[ride.idx]), b = city.nodes.get(ride.sv.seq[j]);
+  const ms = Math.min(2800, Math.max(1200, Math.hypot(b.x - a.x, b.y - a.y) * 16));
+  animateTrain(a, b, ms, () => arriveAt(j));
+}
+function arriveAt(j) {
+  ride.idx = j; P.cur = ride.sv.seq[j]; P.minutes += HOP_MIN;
+  const isNew = markVisited(P.cur);
+  if (isNew) toast(`📮 새 스탬프 <b>${nm(P.cur)}</b> +10`);
+  tickMission();
+  const terminal = stepIdx(ride.sv, j, ride.dir) < 0;
+  if (ride.alightNext || terminal) { if (terminal && !ride.alightNext) toast(`종착역 <b>${nm(P.cur)}</b>입니다. 모두 내려 주세요.`); alight(); return; }
+  mode = "dwell"; doors(true); chime("door");
+  renderPanel(); refreshMap(); renderStats(); save();
+  later(RIDE.dwellMs, () => { if (mode === "dwell") depart(); });
+}
+function alight() {
+  timers.forEach(clearTimeout); timers = [];
+  if (rafId) cancelAnimationFrame(rafId); rafId = 0;
+  mode = "station"; ride = null; hideTrain();
+  checkMissionArrival();
+  renderPanel(); refreshMap(); renderStats(); save();
+}
+function primaryAction() {
+  if (mode === "dwell" || mode === "boarding") alight();
+  else if (mode === "riding") { ride.alightNext = !ride.alightNext; renderPanel(); }
+}
+function cycleSpeed() { S.speed = S.speed === 1 ? 2 : S.speed === 2 ? 4 : 1; save(); renderPanel(); }
+
+/* ---------- train sprite ---------- */
+let trainG = null;
+function buildTrain() {
+  trainG = mk("g", { class: "train", "pointer-events": "none", style: "display:none" }, worldG);
+  const body = mk("g", { class: "train-cars" }, trainG);
+  // 한 칸짜리 열차: 차체, 창문 3개, 양옆 문 2개씩, 앞쪽 전조등
+  mk("rect", { x: -16, y: -7, width: 32, height: 14, rx: 5, class: "car" }, body);
+  for (const wx of [-12, -3, 6]) mk("rect", { x: wx, y: -3.5, width: 6, height: 7, rx: 1, class: "win" }, body);
+  for (const dx of [-8, 2]) {
+    mk("rect", { x: dx, y: -8.5, width: 6, height: 3, class: "door" }, body);
+    mk("rect", { x: dx, y: 5.5, width: 6, height: 3, class: "door" }, body);
+  }
+  mk("circle", { cx: 14, cy: -3.5, r: 1.6, class: "lamp" }, body);
+  mk("circle", { cx: 14, cy: 3.5, r: 1.6, class: "lamp" }, body);
+}
+function showTrain(color) { if (!trainG) return; trainG.style.display = ""; trainG.style.setProperty("--tc", color); }
+function hideTrain() { if (trainG) { trainG.style.display = "none"; trainG.classList.remove("open"); } }
+function doors(open) { if (trainG) trainG.classList.toggle("open", open); }
+let trainAng = 0;
+function animateTrain(a, b, ms, done, angOverride) {
+  if (Math.hypot(b.x - a.x, b.y - a.y) > 0.5) trainAng = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+  const t0 = performance.now(), dur = reduceMotion() ? 0 : ms / (S.speed || 1);
+  const step = (now) => {
+    const t = dur ? Math.min(1, (now - t0) / dur) : 1, k = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    const x = a.x + (b.x - a.x) * k, y = a.y + (b.y - a.y) * k;
+    trainG.setAttribute("transform", `translate(${x},${y}) rotate(${trainAng}) scale(1.35)`);
+    if (follow) followTo(x, y, t >= 1 ? 1 : 0.18);
+    if (t < 1) rafId = requestAnimationFrame(step); else { rafId = 0; done(); }
+  };
+  rafId = requestAnimationFrame(step);
+}
+function followTo(x, y, k) {
+  const { w, h } = svgSize(), tx = w / 2 - x * view.s, ty = h / 2 - y * view.s;
+  view.x += (tx - view.x) * k; view.y += (ty - view.y) * k; applyView();
+}
+
+function onStationClick(n) { selected = n === P.cur ? null : n; refreshMap(); renderPanel(); }
+
+/* ---------- side panel ---------- */
+function signHTML(o) {
+  if (o && o.walk) o = null;
+  const c = o ? o.L.color : "var(--muted)";
+  return `<div class="pf-sign" style="--lc:${c}">
+    <div class="pf-bar"></div>
+    <div class="pf-row">
+      <span class="pf-side">${o && o.prev ? "← " + nm(o.prev) : ""}</span>
+      <span class="pf-here">${o ? badge(o.L) : ""}<b>${nm(P.cur)}</b></span>
+      <span class="pf-side right">${o ? nm(o.next) + " →" : ""}</span>
+    </div>
+    <div class="pf-head">${orig(P.cur) ? esc(orig(P.cur)) + " · " : ""}${o ? esc(o.head) + " 승강장" : "&nbsp;"}</div>
+  </div>`;
+}
+function missionHTML() {
+  const M = P.mission; if (!M) return "";
+  let h = `<div class="section"><h3>미션</h3><div class="mission${M.state === "active" && mUsed(M) > M.limit ? " late" : ""}">`;
+  if (M.state === "active") {
+    const used = mUsed(M), late = used > M.limit, remain = bestRoute(city, P.cur, M.target, P.line);
+    const pct = Math.max(0, Math.min(100, 100 - used / M.limit * 100));
+    h += `<div class="to">🚩 ${nm(M.target)}<span class="sub">에서 내리기</span></div>
+      <div class="timebar"><div style="width:${pct}%"></div></div>
+      <div class="meta"><span>사용 <b>${used}</b>분</span><span>제한 <b>${M.limit}</b>분</span><span>최단 남은 <b>${remain ? remain.time : "?"}</b>분</span></div>
+      <div class="state" style="color:var(${late ? "--bad" : "--good"})">${late ? "시간 초과 — 도착하면 +10" : "제시간 도착 시 50 + 남은 1분당 5점"}</div>
+      ${mode === "station" ? `<div class="row"><button class="btn" id="hintBtn">${showRoute ? "경로 숨기기" : "최단 경로 보기"}</button><button class="btn" id="skipBtn">다른 미션</button></div>` : ""}`;
+  } else {
+    h += `<div class="to">${M.state === "done" ? "미션 완료!" : "늦었지만 도착!"}</div>
+      <div class="meta"><span>${nm(M.target)}</span><span>사용 <b>${M.used}</b>분 / 제한 ${M.limit}분</span></div>
+      ${mode === "station" ? `<div class="row"><button class="btn primary" id="nextMBtn">다음 미션 받기</button></div>` : ""}`;
+  }
+  return h + `</div></div>`;
+}
+function transfersAt(st, exceptLine) {
+  return city.nodes.get(st).lines.filter(l => l !== exceptLine).map(l => city.lineById[l]);
+}
+function renderPanel() {
+  const vis = visitedSet(city.id), here = city.nodes.get(P.cur), fact = city.facts[P.cur];
+  let h = "";
+  if (mode === "station") {
+    opts = boardOptions(P.cur);
+    h += `<div class="sign station-head">
+      <div class="eyebrow">현재 역 · ${esc(city.name)} · ${fmtClock(P.minutes)}</div>
+      <div class="here">${nm(P.cur)}</div>
+      ${orig(P.cur) ? `<div class="orig">${esc(orig(P.cur))}</div>` : ""}
+      <div class="line-chips">${here.lines.map(l => chip(city.lineById[l])).join("")}</div>
+    </div>
+    <div class="section platform"><div id="pfSign">${signHTML(opts[0])}</div>
+      <h3>어느 열차를 탈까요?</h3><div class="opt-list">` +
+      opts.map((o, i) => {
+        if (o.walk) return `<button class="opt walk-opt" data-i="${i}"><span class="badge walkb">🚶</span><span class="opt-main"><b>${nm(o.next)}역으로 걸어가기</b><span>지하 통로 · ${o.next ? city.nodes.get(o.next).lines.map(l => esc(city.lineById[l].name)).join(", ") : ""}</span></span><span class="opt-tag xf">도보 ${o.min}분</span></button>`;
+        const xf = P.line && o.line !== P.line;
+        return `<button class="opt" data-i="${i}">${badge(o.L)}<span class="opt-main"><b>${esc(o.head)}${o.thru ? ' <i class="thru">직통</i>' : ""}</b><span>${o.thru ? esc(o.thru) + " · " : ""}다음 역 ${nm(o.next)}${vis[o.next] ? "" : ' <i class="new">NEW</i>'}</span></span><span class="opt-tag${xf ? " xf" : ""}">${xf ? "환승 " + XFER_MIN + "분" : P.line ? "같은 노선" : "바로 탑승"}</span></button>`;
+      }).join("") + `</div></div>`;
+    if (selected && selected !== P.cur) {
+      const o = city.nodes.get(selected), r = bestRoute(city, P.cur, selected, P.line), f = city.facts[selected];
+      h += `<div class="section"><h3>선택한 역 <button class="btn" id="closeSel">닫기</button></h3>
+        <div class="info-name">${nm(selected)} ${orig(selected) ? `<span class="orig-s">${esc(orig(selected))}</span>` : ""} ${vis[selected] ? "· 방문함" : ""}</div>
+        <div class="line-chips">${o.lines.map(l => chip(city.lineById[l])).join("")}</div>
+        ${r ? `<div class="foot-note">여기서 최단 ${r.time}분 · ${r.path.length - 1}정거장 (열차 대기 시간 제외)</div>` : ""}
+        ${f ? `<div class="fact"><b>이 역 이야기</b>${esc(f)}</div>` : ""}</div>`;
+    }
+    if (fact) h += `<div class="section"><div class="fact"><b>이 역 이야기</b>${esc(fact)}</div></div>`;
+    h += missionHTML();
+  } else if (mode === "walking" && pending.walk) {
+    h += `<div class="sign"><div class="eyebrow">도보 이동 · ${fmtClock(P.minutes)}</div><div class="here">${nm(P.cur)}</div></div>
+      <div class="section"><div class="walk" style="--lc:var(--muted);--walk:${RIDE.walkMs / (S.speed || 1)}ms">
+        <div class="walk-sign"><b>${nm(pending.next)}역</b> 가는 지하 통로 <span class="arrow">→</span></div>
+        <div class="walk-track"><span class="walker" aria-hidden="true">🚶</span></div>
+        <div class="foot-note">개찰구를 나오지 않고 지하 통로로 걷는 중 · +${pending.min}분</div>
+      </div></div>` + missionHTML();
+  } else if (mode === "walking") {
+    const L = pending.L;
+    h += `<div class="sign"><div class="eyebrow">환승 중 · ${fmtClock(P.minutes)}</div><div class="here">${nm(P.cur)}</div></div>
+      <div class="section"><div class="walk" style="--lc:${L.color};--walk:${RIDE.walkMs / (S.speed || 1)}ms">
+        <div class="walk-sign">${badge(L)} <b>${esc(L.name)}</b> 갈아타는 곳 <span class="arrow">→</span></div>
+        <div class="walk-track"><span class="walker" aria-hidden="true">🚶</span></div>
+        <div class="foot-note">환승 통로를 따라 걷는 중 · +${XFER_MIN}분</div>
+      </div></div>` + missionHTML();
+  } else if (mode === "waiting") {
+    const o = pending;
+    h += `<div class="sign"><div class="eyebrow">승강장 · ${fmtClock(P.minutes)}</div><div class="here">${nm(P.cur)}</div></div>
+      <div class="section platform">${signHTML(o)}
+        <div class="led"><div class="led-top">${badge(o.L)} ${esc(o.head)}</div><div class="led-main blink">열차가 들어오고 있습니다</div><div class="led-sub">${o.wait}분 기다렸습니다 · 안전선 밖으로 한 걸음 물러서 주세요</div></div>
+        <div class="approach" style="--lc:${o.L.color};--dur:${RIDE.waitMs / (S.speed || 1)}ms"><span></span></div>
+      </div>` + missionHTML();
+  } else {
+    const L = city.lineById[ride.line], stopped = mode === "dwell" || mode === "boarding";
+    const j = stepIdx(ride.sv, ride.idx, ride.dir), next = j >= 0 ? ride.sv.seq[j] : null;
+    const M = P.mission, target = M && M.state === "active" ? M.target : null;
+    const showSt = stopped ? P.cur : next;
+    const xs = showSt ? transfersAt(showSt, ride.line) : [];
+    let main, sub = "";
+    if (stopped && target === P.cur) { main = "🚩 목적지입니다! 지금 내리세요"; }
+    else if (stopped) { main = `이번 역은 ${esc(stationWord(P.cur))}입니다`; }
+    else { main = `다음 역은 ${esc(stationWord(next))}입니다`; }
+    if (xs.length) { const last = xs[xs.length - 1].name; sub = `${xs.map(x => esc(x.name)).join(", ")}${ro(last)} 갈아타실 수 있습니다`; }
+    else if (!stopped && target === next) sub = "🚩 다음 역이 목적지입니다";
+    h += `<div class="sign"><div class="eyebrow">${badge(L)} ${esc(L.name)} · ${esc(ride.head)} · ${fmtClock(P.minutes)}</div>
+      <div class="here">${stopped ? nm(P.cur) : "→ " + nm(next)}</div>
+      <div class="clock">${stopped ? (mode === "boarding" ? "탑승 중… 문이 곧 닫힙니다" : "정차 중 · 문이 열렸습니다") : "운행 중"}</div></div>
+      <div class="section"><div class="led${stopped && target === P.cur ? " goal" : ""}"><div class="led-top">${esc(ride.head)}</div><div class="led-main">${main}</div>${sub ? `<div class="led-sub">${sub}</div>` : ""}</div>
+      <div class="ride-btns">
+        ${stopped ? `<button class="btn big primary${target === P.cur ? " pulse-btn" : ""}" id="actBtn">지금 내리기 <kbd>Space</kbd></button>`
+                  : `<button class="btn big${ride.alightNext ? " on" : ""}" id="actBtn" aria-pressed="${ride.alightNext}">${ride.alightNext ? "✓ 다음 역에서 내립니다" : "다음 역에서 내리기"} <kbd>Space</kbd></button>`}
+        <button class="btn" id="speedBtn" title="열차 속도">속도 ×${S.speed || 1}</button>
+      </div></div>
+      <div class="section"><h3>이 열차의 다음 역</h3><ol class="strip" style="--lc:${L.color}">` +
+      upcoming(7).map((o, i) => {
+        const others = transfersAt(o.st, ride.line);
+        const cls = (o.here ? (stopped ? " here" : " passed") : "") + (!stopped && i === 1 ? " next" : "") + (o.st === target ? " goal" : "");
+        return `<li class="${cls}"><span class="dot"></span><span class="snm">${nm(o.st)}${o.st === target ? " 🚩" : ""}${o.end ? ' <i class="end">종착</i>' : ""}</span><span class="xb">${others.map(badge).join("")}</span></li>`;
+      }).join("") + `</ol></div>` + missionHTML();
+  }
+  h += `<div class="section"><h3>노선별 탐험 <span style="font-weight:500;letter-spacing:0">${Object.keys(vis).length}/${city.total}</span></h3><div class="lines-prog">` +
+    city.lines.map(L => { const v = L.all.filter(s => vis[s]).length;
+      return `<div class="lp" style="--c:${L.color}">${chip(L)}<div class="progress"><div style="width:${v / L.all.length * 100}%"></div></div><span class="n">${v}/${L.all.length}</span></div>`; }).join("") +
+    `</div></div>`;
+  h += `<div class="section"><h3>도시 이야기</h3><div style="font-size:13px">${esc(city.fact)}</div></div>`;
+  if (S.log.length) h += `<div class="section"><h3>최근 기록</h3><ul class="log">${S.log.map(l => `<li>${l}</li>`).join("")}</ul></div>`;
+  h += `<div class="section"><div class="row"><button class="btn" id="backBtn">← 다른 도시로</button></div></div>`;
+  const keepScroll = $("panel").scrollTop;
+  $("panel").innerHTML = h;
+  $("panel").scrollTop = (mode === "station" && !selected) ? keepScroll : 0;
+  $("panel").querySelectorAll(".opt").forEach(b => {
+    const o = opts[+b.dataset.i];
+    b.onclick = () => takeOption(o);
+    const show = () => { $("pfSign").innerHTML = signHTML(o); };
+    b.onmouseenter = show; b.onfocus = show;
+  });
+  const on = (id, fn) => { const el = $(id); if (el) el.onclick = fn; };
+  on("actBtn", primaryAction);
+  on("speedBtn", cycleSpeed);
+  on("hintBtn", () => { showRoute = !showRoute; refreshMap(); renderPanel(); });
+  on("skipBtn", () => { newMission(); refreshMap(); renderPanel(); save(); });
+  on("nextMBtn", () => { newMission(); refreshMap(); renderPanel(); save(); });
+  on("closeSel", () => { selected = null; refreshMap(); renderPanel(); });
+  on("backBtn", showHome);
+}
+document.addEventListener("keydown", (e) => {
+  if (!city || $("game").hidden || e.target.closest("input, textarea, button")) return;
+  if (e.key === " " || e.key === "Enter") { if (mode !== "station") { e.preventDefault(); primaryAction(); } }
+});
+
+/* ---------- passport ---------- */
+function openPassport() {
+  const rnd = (s) => { let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) | 0; return ((h % 7) - 3) + "deg"; };
+  let body = `<div class="foot-note">스탬프 ${stampCount()}개 · 배지 ${Object.keys(S.badges).length}개 · 점수 ${S.score.toLocaleString("ko-KR")}</div>`;
+  const badgeHtml = [];
+  for (const c of Object.values(WORLD)) {
+    for (const L of c.lines) if (S.badges[c.id + ":" + L.id]) badgeHtml.push(`<span class="badge"><i style="background:${L.color}">✓</i>${c.flag} ${esc(c.name)} ${esc(L.name)}</span>`);
+    if (S.badges[c.id + ":ALL"]) badgeHtml.push(`<span class="badge"><i style="background:var(--ink)">★</i>${c.flag} ${esc(c.name)} 정복</span>`);
+  }
+  body += `<div class="stamp-city"><h4>배지</h4><div class="badges">${badgeHtml.join("") || '<span class="foot-note">아직 없어요. 한 노선의 모든 역을 방문해 보세요.</span>'}</div></div>`;
+  for (const c of Object.values(WORLD)) {
+    const vis = visitedSet(c.id), names = Object.keys(vis).sort((a, b) => vis[a] - vis[b]);
+    const color = (n) => c.lineById[c.nodes.get(n).lines[0]].color;
+    body += `<div class="stamp-city"><h4>${c.flag} ${esc(c.name)} <span>${names.length}/${c.total}</span></h4><div class="stamps">` +
+      (names.length ? names.map(n => `<span class="stamp" style="--c:${color(n)};--r:${rnd(n)}">${nm(n)}</span>`).join("") : '<span class="stamp none">아직 방문 전</span>') + `</div></div>`;
+  }
+  body += `<div class="row"><button class="btn" id="resetBtn">기록 초기화</button></div><div id="resetConfirm"></div>`;
+  $("modalRoot").innerHTML = `<div class="modal-bg" id="mbg"><div class="modal" role="dialog" aria-modal="true" aria-label="탐험 여권">
+    <div class="sign"><div class="here">탐험 여권</div><button class="tb-btn" id="mClose">닫기</button></div>
+    <div class="modal-body">${body}</div></div></div>`;
+  const close = () => { $("modalRoot").innerHTML = ""; };
+  $("mClose").onclick = close; $("mbg").onclick = (e) => { if (e.target.id === "mbg") close(); };
+  $("mClose").focus();
+  $("resetBtn").onclick = () => {
+    $("resetConfirm").innerHTML = `<div class="fact"><b>정말 초기화할까요?</b>모든 스탬프·배지·점수가 지워집니다.<div class="row" style="margin-top:8px"><button class="btn primary" id="resetYes">초기화</button><button class="btn" id="resetNo">취소</button></div></div>`;
+    $("resetNo").onclick = () => { $("resetConfirm").innerHTML = ""; };
+    $("resetYes").onclick = () => { S = { score: 0, visited: {}, badges: {}, pos: {}, log: [], sound: S.sound }; save(); close(); showHome(); toast("기록을 초기화했습니다"); };
+  };
+}
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("modalRoot").innerHTML) $("modalRoot").innerHTML = ""; });
+
+function pickSearch() {
+  const v = $("stSearch").value.trim(); if (!city || !v) return;
+  let key = searchIndex.get(v);
+  if (!key) { const hit = [...searchIndex.entries()].find(([k]) => k.startsWith(v + " ·")) || [...searchIndex.entries()].find(([k]) => k.includes(v)); key = hit && hit[1]; }
+  if (!key) { toast(`'${esc(v)}' 역을 찾지 못했어요`); return; }
+  selected = key === P.cur ? null : key; centerOn(key, 0.9); refreshMap(); renderPanel();
+}
+$("stSearch").addEventListener("change", pickSearch);
+$("stSearch").addEventListener("keydown", (e) => { if (e.key === "Enter") pickSearch(); });
+$("homeBtn").onclick = showHome;
+$("passBtn").onclick = openPassport;
+$("soundBtn").onclick = () => { S.sound = !S.sound; renderStats(); save(); if (S.sound) chime("new"); };
+
+/* start */
+(function boot() {
+  const h = (location.hash || "").slice(1);
+  if (WORLD[h]) enterCity(h); else showHome();
+  window.addEventListener("hashchange", () => { const k = location.hash.slice(1); if (WORLD[k] && (!city || city.id !== k)) enterCity(k); });
+})();
+</script>
+<!-- END PAGE -->
+</body>
+</html>
