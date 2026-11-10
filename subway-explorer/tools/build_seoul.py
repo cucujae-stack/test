@@ -80,6 +80,19 @@ LINES = [
        segs=[S("양촌 구래 마산 장기 운양 걸포북변 사우 풍무 고촌 김포공항")]),
 ]
 
+def _services():
+    """구간(segs)을 실제 열차 운행 계통으로 바꾼다. 계통끼리 겹쳐도 된다 (지도에는 한 번만 그린다)."""
+    by = {L["id"]: L for L in LINES}
+    a, b, c, d, e = by["1"]["segs"]
+    by["1"]["segs"] = [a + b[1:], a + c[1:], d, e]                 # 인천행, 신창행, 광명셔틀, 서동탄행
+    m, h, k = by["5"]["segs"]
+    by["5"]["segs"] = [m + h[1:], m + k[1:]]                        # 하남검단산행, 마천행
+    main, br = by["K"]["segs"]
+    by["K"]["segs"] = [main, main[: main.index("가좌") + 1] + br[1:]]  # 경의선 서울역행
+    by["2"]["loopNames"] = ["내선순환", "외선순환"]                   # 시청→을지로입구 방향이 내선
+    by["6"]["loopNames"] = ["응암순환", "응암순환"]
+_services()
+
 # 같은 이름의 다른 역: 키 -> 원본 노선
 ROUTE_HINT = {"양평#중앙": "중앙선", "신촌#경의": "경의중앙선"}
 
@@ -191,7 +204,7 @@ def main(check_only):
         return
 
     out = {
-        "lines": [{"id": L["id"], "name": L["name"], "short": L["short"], "color": L["color"], "segs": L["segs"]} for L in LINES],
+        "lines": [{k: L[k] for k in ("id", "name", "short", "color", "segs", "loopNames") if k in L} for L in LINES],
         "geo": geo, "facts": FACTS, "start": START,
     }
     js = "const SEOUL_DATA = " + json.dumps(out, ensure_ascii=False, separators=(",", ":")) + ";"
