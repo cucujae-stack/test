@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>화실 담</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="꽃과 바다, 고향 풍경을 그린 유화 원화를 판매합니다. 화실 담.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="화실 담 · 유화 원화 판매">
+<meta property="og:description" content="꽃과 바다, 고향 풍경을 그린 유화 원화. 택배 무료, 7일 이내 반품 가능.">
+<meta property="og:image" content="images/og.jpg">
+<meta property="og:url" content="https://○○○.github.io/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@300;500;700&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a gallery wall. One featured painting hung at eye level, then a hang of framed works with museum-style wall labels. */
+:root{
+  --wall:#e6e9e4;      /* cool plaster wall */
+  --ink:#1d2321;
+  --ink-soft:#56605b;
+  --label:#fbfbf8;     /* wall-label card */
+  --frame:#2a2622;     /* dark wood frame */
+  --mat:#f4f3ee;
+  --accent:#2747a8;    /* ultramarine */
+  --accent-ink:#ffffff;
+  --kakao:#fee500; --kakao-ink:#191600;
+  --sold:#a33a2c;
+  --hold:#9a6b10;
+  --line:#c6ccc4;      /* decorative rules */
+  --field:#7f8a84;     /* form & control borders, 3:1+ */
+  --f-display:"Hahmlet","Nanum Myeongjo",serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --wall:#1b1f1e;--ink:#e9ece8;--ink-soft:#a3aca7;--label:#262b2a;
+  --frame:#0d0c0b;--mat:#2d3230;--accent:#8ea6f0;--accent-ink:#0f1730;--sold:#ef8a7b;--hold:#e2b452;--line:#3a413f;--field:#7a8580;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --wall:#1b1f1e;--ink:#e9ece8;--ink-soft:#a3aca7;--label:#262b2a;
+  --frame:#0d0c0b;--mat:#2d3230;--accent:#8ea6f0;--accent-ink:#0f1730;--sold:#ef8a7b;--hold:#e2b452;--line:#3a413f;--field:#7a8580;color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--wall);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.65;margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body.locked{overflow:hidden}
+.wrap{max-width:1120px;margin:0 auto}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;font-weight:500}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.mono{font-family:var(--f-mono);font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
+
+/* top bar */
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px 16px;padding-block:14px;flex-wrap:wrap}
+.brand{font-family:var(--f-display);font-size:1.35rem;font-weight:700;letter-spacing:-.01em}
+.brand small{font-family:var(--f-mono);font-weight:400;font-size:.72rem;color:var(--ink-soft);margin-left:8px;letter-spacing:.08em}
+.nav{display:flex;gap:4px;flex-wrap:wrap;margin-inline:-10px}
+.nav a{color:var(--ink);text-decoration:none;font-size:.95rem;padding:10px;min-height:44px;display:inline-flex;align-items:center}
+.nav a:hover{color:var(--accent)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:56px;align-items:center;padding-block:40px 72px}
+.hero h1{font-size:clamp(2.1rem,5vw,3.6rem);line-height:1.15;letter-spacing:-.02em;font-weight:300}
+.hero h1 b{font-weight:700}
+.hero p.lead{color:var(--ink-soft);max-width:34ch;margin:20px 0 28px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:2px;min-height:48px;padding:12px 20px;font:500 1rem var(--f-body);cursor:pointer;text-decoration:none}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.kakao{background:var(--kakao);color:var(--kakao-ink)}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.actions{display:flex;gap:12px;flex-wrap:wrap}
+.reassure{display:flex;gap:6px 18px;flex-wrap:wrap;margin-top:22px;font-size:.88rem;color:var(--ink-soft)}
+.reassure span::before{content:"✓ ";color:var(--accent)}
+
+/* frame */
+.frame{background:var(--frame);padding:clamp(10px,1.6vw,16px);box-shadow:0 22px 40px -18px rgba(0,0,0,.45),0 2px 4px rgba(0,0,0,.2)}
+.frame .matbox{display:block;background:var(--mat);padding:clamp(10px,2.2vw,26px);position:relative}
+.frame canvas,.frame img{display:block;width:100%;height:auto;max-width:100%}
+.hang{position:relative;display:block}
+.hang::before{content:"";position:absolute;left:50%;top:-34px;width:1px;height:34px;background:var(--ink-soft);opacity:.5}
+
+/* wall label (spans so it can live inside buttons) */
+.wl{display:block;background:var(--label);padding:14px 16px;box-shadow:0 1px 2px rgba(0,0,0,.12);font-size:.9rem;line-height:1.5}
+.wl .t{display:block;font-family:var(--f-display);font-weight:700;font-size:1.05rem}
+.wl .meta{display:block;color:var(--ink-soft)}
+.wl .price{font-family:var(--f-mono);font-size:.95rem;font-variant-numeric:tabular-nums;margin-top:6px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.dot{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-body);font-size:.8rem;font-weight:500}
+.dot::before{content:"";width:9px;height:9px;border-radius:50%;background:currentColor}
+.dot.sale{color:var(--accent)} .dot.hold{color:var(--hold)} .dot.sold{color:var(--sold)}
+.hero .wl{max-width:300px;margin:26px 0 0 auto}
+
+/* clickable work */
+.work{display:flex;flex-direction:column;gap:18px;cursor:pointer;background:none;border:0;padding:0;text-align:left;color:inherit;font:inherit;width:100%}
+.work .frame{display:block;transition:transform .25s ease}
+.work:hover .frame{transform:translateY(-4px)}
+.work .more{display:block;font-size:.85rem;color:var(--accent);margin-top:6px;font-weight:500}
+.work.is-sold .matbox::after{content:"";position:absolute;right:10px;bottom:10px;width:14px;height:14px;border-radius:50%;background:var(--sold)} /* gallery red dot */
+
+/* section */
+section{padding-block:56px;border-top:1px solid var(--line)}
+.sh{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:36px}
+.sh h2{font-size:clamp(1.6rem,3vw,2.2rem)}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--field);background:transparent;color:var(--ink);min-height:44px;padding:8px 16px;border-radius:999px;font:500 .92rem var(--f-body);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--wall);border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:64px 44px;align-items:start}
+
+/* about */
+.about{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:48px}
+.about p{max-width:60ch;margin:0 0 14px}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;font-size:.95rem;margin-top:18px}
+.facts dt{color:var(--ink-soft)} .facts dd{margin:0}
+
+/* how to buy */
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;counter-reset:s;margin:0;padding:0;list-style:none}
+.step{border-top:2px solid var(--ink);padding-top:14px}
+.step::before{counter-increment:s;content:counter(s);font-family:var(--f-mono);font-size:.8rem;color:var(--ink-soft)}
+.step h3{font-size:1.1rem;margin:4px 0 6px}
+.step p{margin:0;color:var(--ink-soft);font-size:.95rem}
+.policy{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 40px;margin-top:40px;background:var(--label);padding:24px;border:1px solid var(--line)}
+.policy h3{grid-column:1/-1;font-size:1.15rem}
+.policy dl{margin:0;display:grid;gap:2px}
+.policy dt{font-weight:600;font-size:.95rem}
+.policy dd{margin:0 0 10px;color:var(--ink-soft);font-size:.93rem}
+.sizes{margin-top:36px;overflow-x:auto}
+.sizes table{border-collapse:collapse;font-size:.92rem;min-width:480px;width:100%}
+.sizes th,.sizes td{padding:8px 12px;border-bottom:1px solid var(--line);text-align:left;font-variant-numeric:tabular-nums}
+.sizes th{font-family:var(--f-mono);font-weight:500;font-size:.75rem;letter-spacing:.06em;color:var(--ink-soft)}
+.sizes caption{text-align:left;padding-bottom:8px}
+
+footer{border-top:1px solid var(--line);padding-block:32px 48px;color:var(--ink-soft);font-size:.9rem;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer a{color:inherit}
+
+/* dialog */
+dialog{border:0;padding:0;background:transparent;color:var(--ink);width:min(920px,calc(100% - 24px));max-width:none;max-height:calc(100% - 24px)}
+dialog::backdrop{background:rgba(10,12,11,.6)}
+.sheet{background:var(--wall);display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;padding:0 28px 28px;max-height:calc(100dvh - 24px);overflow:auto}
+.sheet-bar{grid-column:1/-1;position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--wall);padding-block:12px;margin-bottom:-12px}
+.x{width:48px;height:48px;border-radius:50%;border:1px solid var(--field);background:var(--label);color:var(--ink);font-size:1.6rem;line-height:1;cursor:pointer;flex:none}
+.sheet h2{font-size:1.7rem;margin-bottom:8px}
+.sheet .desc{color:var(--ink-soft);font-size:.97rem;margin:12px 0 18px}
+form{display:grid;gap:12px}
+label{font-size:.9rem;color:var(--ink-soft);display:grid;gap:4px}
+input,textarea,select{font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--field);background:var(--label);color:var(--ink);border-radius:2px;width:100%}
+.out{background:var(--label);border:1px dashed var(--field);padding:12px;font-size:.93rem;white-space:pre-wrap;margin-top:4px}
+.send{display:grid;gap:10px;margin-top:6px}
+.send .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.send p{margin:0;font-size:.88rem;color:var(--ink-soft)}
+.plain{font-size:.88rem;color:var(--ink-soft)} .plain b{user-select:all;color:var(--ink);font-weight:500}
+.close-bottom{margin-top:6px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--wall);padding:12px 18px;font-size:.95rem;z-index:60;max-width:calc(100% - 32px)}
+.sample{display:inline-block;font-family:var(--f-mono);font-size:.7rem;letter-spacing:.06em;border:1px solid var(--line);padding:2px 8px;color:var(--ink-soft);margin-bottom:16px}
+
+@media (max-width:860px){
+  .hero,.about,.sheet,.policy{grid-template-columns:1fr}
+  .hero{gap:48px;padding-top:16px}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:48px 24px}
+  .steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:520px){
+  .grid,.steps{grid-template-columns:1fr}
+  .hero .wl{margin-left:0}
+  .sheet{padding:0 16px 22px;gap:20px}
+  .send .row{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">화실 담<small>ATELIER DAM</small></div>
+    <nav class="nav" aria-label="메뉴">
+      <a href="#works">작품</a><a href="game.html">그림 게임</a><a href="#artist">작가 소개</a><a href="#buy">구매·배송·반품</a>
+    </nav>
+  </header>
+
+  <main>
+  <div class="hero">
+    <div>
+      <span class="sample">샘플 작품 · 실제 사진으로 교체해 주세요</span>
+      <h1>매일 아침 붓을 드는<br><b>한 사람의 정원</b></h1>
+      <p class="lead">삼십 년 동안 가족을 돌보던 손으로 이제는 꽃과 바다를 그립니다. 집 거실에 걸어둘 원화 한 점을 만나보세요.</p>
+      <div class="actions">
+        <a class="btn primary" href="#works">작품 보기</a>
+        <a class="btn ghost" href="#buy">구매 방법</a>
+      </div>
+      <div class="reassure"><span>작가 서명·보증서</span><span>택배 무료</span><span>7일 이내 반품</span></div>
+    </div>
+    <div id="hero"></div>
+  </div>
+
+  <section id="works" aria-labelledby="worksH">
+    <div class="sh">
+      <div><div class="mono">Exhibition · 2026</div><h2 id="worksH">전시 중인 작품</h2></div>
+      <div class="filters" role="group" aria-label="판매 상태로 거르기">
+        <button class="chip" data-f="all" aria-pressed="true">전체</button>
+        <button class="chip" data-f="sale" aria-pressed="false">판매중</button>
+        <button class="chip" data-f="hold" aria-pressed="false">예약중</button>
+        <button class="chip" data-f="sold" aria-pressed="false">판매완료</button>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section id="artist" class="about" aria-labelledby="artistH">
+    <div><div class="mono">Artist</div><h2 id="artistH">작가 소개</h2></div>
+    <div>
+      <p>쉰여섯에 동네 문화센터에서 처음 유화를 배웠습니다. 베란다 화분, 고향 바다, 시장에서 사 온 작약처럼 매일 곁에 있는 것들을 그립니다.</p>
+      <p>한 작품에 보통 2~3주가 걸립니다. 물감이 충분히 마른 뒤 바니시로 마감해서 보내드립니다.</p>
+      <dl class="facts">
+        <dt>작가</dt><dd>○○○ (1964년생)</dd>
+        <dt>재료</dt><dd>캔버스에 유채, 아크릴</dd>
+        <dt>활동</dt><dd>2019년 ○○구민회관 회원전, 2023년 첫 개인전 「베란다 정원」</dd>
+        <dt>작업실</dt><dd>경기도 ○○시 (방문 관람은 미리 연락 주세요)</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section id="buy" aria-labelledby="buyH">
+    <div class="sh"><div><div class="mono">How to buy</div><h2 id="buyH">구매 안내</h2></div></div>
+    <ol class="steps">
+      <li class="step"><h3>작품 고르기</h3><p>마음에 드는 그림을 눌러 크기와 가격을 확인하세요.</p></li>
+      <li class="step"><h3>카카오톡으로 문의</h3><p>버튼을 누르면 문의 문장이 복사되고 카카오톡이 열려요. 붙여넣기만 하세요.</p></li>
+      <li class="step"><h3>입금</h3><p>작가 본인 명의 계좌(예금주 ○○○)로 입금하시면 작품을 예약해 둡니다.</p></li>
+      <li class="step"><h3>배송·직접 수령</h3><p>입금 확인 후 3~5일 안에 택배(무료)로 보내드려요. 화실에서 직접 받으셔도 됩니다.</p></li>
+    </ol>
+    <div class="policy">
+      <h3>꼭 알아두세요</h3>
+      <dl>
+        <dt>가격에 포함된 것</dt><dd>캔버스 원화 1점, 작가 서명, 작품 보증서. 사진 속 액자는 보여드리기용이며, 원목 액자는 3만 원(10호 기준)에 추가할 수 있어요.</dd>
+        <dt>포장</dt><dd>모서리 보호대, 에어캡, 전용 상자로 세 겹 포장합니다.</dd>
+      </dl>
+      <dl>
+        <dt>반품·환불</dt><dd>받으신 날부터 7일 이내 반품할 수 있어요. 배송 중 파손은 전액 환불하고, 단순 변심은 반송비만 부담하시면 됩니다.</dd>
+        <dt>판매자</dt><dd>화실 담 · 대표 ○○○ · 연락처 <span id="polPhone"></span></dd>
+      </dl>
+    </div>
+    <div class="sizes">
+      <table>
+        <caption class="mono">캔버스 호수 참고표 (F형, 인물형)</caption>
+        <thead><tr><th scope="col">호수</th><th scope="col">크기 (cm)</th><th scope="col">어울리는 곳</th></tr></thead>
+        <tbody>
+          <tr><td>4호</td><td>33.4 × 24.2</td><td>현관, 책상 위</td></tr>
+          <tr><td>6호</td><td>40.9 × 31.8</td><td>침실, 복도</td></tr>
+          <tr><td>10호</td><td>53.0 × 45.5</td><td>거실 협탁 위, 식탁 옆 벽</td></tr>
+          <tr><td>20호</td><td>72.7 × 60.6</td><td>소파 뒤, 거실 메인 벽</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  </main>
+
+  <footer>
+    <span>© 2026 화실 담 · 모든 작품의 저작권은 작가에게 있습니다.</span>
+    <span id="footContact"></span>
+  </footer>
+</div>
+
+<dialog id="modal" aria-labelledby="mTitle">
+  <div class="sheet">
+    <div class="sheet-bar"><span class="mono" id="mNo"></span><button class="x" id="mClose" aria-label="닫기">×</button></div>
+    <div><div class="frame"><div class="matbox" id="mArt"></div></div></div>
+    <div>
+      <h2 id="mTitle"></h2>
+      <div id="mLabel"></div>
+      <p class="desc" id="mDesc"></p>
+      <form id="inq" novalidate>
+        <label for="fName">성함<input id="fName" autocomplete="name" placeholder="홍길동"></label>
+        <label for="fWay">받는 방법<select id="fWay"><option>택배 배송</option><option>화실에서 직접 수령</option></select></label>
+        <label for="fMsg">하고 싶은 말 (선택)<textarea id="fMsg" rows="2" placeholder="거실 소파 뒤에 걸고 싶어요"></textarea></label>
+        <div class="out" id="out" aria-live="polite"></div>
+        <div class="send">
+          <p id="sendHint">버튼을 누르면 위 문장이 복사되고 메신저가 열려요. 대화창에 붙여넣기만 하세요.</p>
+          <div class="row">
+            <a class="btn kakao" id="goKakao" target="_blank" rel="noopener">카카오톡으로 문의</a>
+            <a class="btn ghost" id="goInsta" target="_blank" rel="noopener">인스타그램 DM</a>
+          </div>
+          <span class="plain">문자·전화도 괜찮아요: <b id="mPhone"></b></span>
+        </div>
+      </form>
+      <button class="btn ghost close-bottom" id="mClose2" type="button">닫기</button>
+    </div>
+  </div>
+</dialog>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+/* ============ 여기만 고치면 됩니다 ============ */
+const SITE = {
+  kakao: "https://open.kakao.com/o/○○○○",   // 카카오톡 오픈채팅 주소
+  insta: "atelier.dam",                      // 인스타그램 아이디 (@ 빼고)
+  phone: "010-○○○○-○○○○",
+  email: "○○○@gmail.com"
+};
+/* img: 실제 사진 경로 (예: "images/spring.jpg"). 비워두면 샘플 그림이 그려집니다.
+   status: "sale" 판매중 · "hold" 예약중 · "sold" 판매완료
+   featured: true 인 작품이 맨 위 대표 작품으로 걸립니다. */
+const WORKS = [
+  {no:"No.01", title:"베란다의 작약", year:2026, medium:"캔버스에 유채", ho:"10호", cm:"53.0 × 45.5", price:450000, status:"sale", kind:"flower", seed:7, featured:true,
+   desc:"오월 아침, 시장에서 사 온 작약이 하루 만에 활짝 피었습니다. 꽃잎이 무거워지기 전에 서둘러 그렸어요."},
+  {no:"No.02", title:"고향 바다, 구룡포", year:2025, medium:"캔버스에 유채", ho:"20호", cm:"72.7 × 60.6", price:900000, status:"sale", kind:"sea", seed:3,
+   desc:"어릴 적 매일 보던 바다입니다. 바람이 센 날 물빛이 가장 진해집니다."},
+  {no:"No.03", title:"보리밭 사이 길", year:2025, medium:"캔버스에 유채", ho:"6호", cm:"40.9 × 31.8", price:280000, status:"hold", kind:"field", seed:11,
+   desc:"고창 청보리밭 축제에 다녀온 날 그린 그림입니다."},
+  {no:"No.04", title:"겨울 감나무", year:2024, medium:"캔버스에 아크릴", ho:"10호", cm:"53.0 × 45.5", price:420000, status:"sold", kind:"tree", seed:5,
+   desc:"잎이 다 지고 까치밥만 남은 시골집 감나무."},
+  {no:"No.05", title:"수국 한 다발", year:2026, medium:"캔버스에 유채", ho:"4호", cm:"33.4 × 24.2", price:180000, status:"sale", kind:"flower", seed:21,
+   desc:"장마철 내내 식탁 위에 있던 수국. 작은 크기라 현관에 두기 좋습니다."},
+  {no:"No.06", title:"해 질 녘 갯벌", year:2026, medium:"캔버스에 유채", ho:"6호", cm:"40.9 × 31.8", price:300000, status:"sale", kind:"sea", seed:14,
+   desc:"물이 빠진 갯벌에 노을이 고였습니다."}
+];
+/* ============================================ */
+
+const won = n => n.toLocaleString("ko-KR") + "원";
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ST = {sale:["판매중","sale"], hold:["예약중","hold"], sold:["판매완료","sold"]};
+const $ = s => document.querySelector(s);
+
+/* procedural sample painting (painterly strokes) */
+function rng(seed){let s=seed*9301+49297;return()=>{s=(s*9301+49297)%233280;return s/233280}}
+function paint(work, w){
+  const ratio = {"4호":24.2/33.4,"6호":31.8/40.9,"10호":45.5/53.0,"20호":60.6/72.7}[work.ho] || .8;
+  const h = Math.round(w*ratio), c = document.createElement("canvas"); c.width=w; c.height=h;
+  c.setAttribute("role","img"); c.setAttribute("aria-label", work.title + " (샘플 그림)");
+  const x = c.getContext("2d"), r = rng(work.seed);
+  x.fillStyle="#efece3"; x.fillRect(0,0,w,h);   /* gesso ground */
+  const stroke=(cx,cy,len,ang,wd,col)=>{x.save();x.translate(cx,cy);x.rotate(ang);x.fillStyle=col;x.beginPath();
+    x.ellipse(0,0,len,wd,0,0,Math.PI*2);x.fill();x.restore()};
+  const hsl=(hh,ss,ll,a=.75)=>`hsla(${hh},${ss}%,${ll}%,${a})`;
+  const fill=(y0,y1,base,n,jit,ang=0)=>{for(let i=0;i<n;i++){const y=y0+r()*(y1-y0);
+    stroke(r()*w,y,w*(.03+r()*.05),ang+(r()-.5)*.35,w*(.006+r()*.01),hsl(base[0]+(r()-.5)*jit,base[1],base[2]+(r()-.5)*14))}};
+  const k=work.kind;
+  if(k==="sea"){
+    const sunset = work.seed>10;
+    fill(0,h*.5,sunset?[28,70,70]:[205,45,78],900,sunset?40:20);
+    fill(h*.45,h,sunset?[210,40,40]:[200,60,42],1400,25,0);
+    for(let i=0;i<160;i++) stroke(r()*w,h*.5+r()*h*.5,w*.03,0,w*.004,hsl(0,0,96,.6));
+    if(sunset){x.fillStyle=hsl(20,90,60,.9);x.beginPath();x.arc(w*.68,h*.44,w*.06,0,7);x.fill()}
+  } else if(k==="flower"){
+    fill(0,h,[work.seed>15?190:150,22,82],1200,30);
+    fill(h*.72,h,[30,30,55],300,10);
+    const hue = work.seed>15?[230,45,62]:[340,55,72];
+    for(let f=0;f<7;f++){const cx=w*(.25+r()*.5),cy=h*(.18+r()*.45),R=w*(.06+r()*.06);
+      for(let i=0;i<120;i++){const a=r()*7,d=R*Math.sqrt(r());stroke(cx+Math.cos(a)*d,cy+Math.sin(a)*d,R*.3,a,R*.12,hsl(hue[0]+(r()-.5)*25,hue[1],hue[2]+(r()-.5)*20,.8))}}
+    for(let i=0;i<120;i++) stroke(w*(.3+r()*.4),h*(.5+r()*.25),w*.05,1.2+(r()-.5),w*.008,hsl(120,35,35,.7));
+    x.fillStyle=hsl(35,25,40,.9);x.fillRect(w*.38,h*.66,w*.24,h*.24);
+  } else if(k==="field"){
+    fill(0,h*.4,[200,50,80],600,15);
+    fill(h*.35,h*.5,[140,30,45],300,20);
+    for(let i=0;i<2200;i++){const y=h*.45+r()*h*.55;stroke(r()*w,y,w*.012*(y/h),-1.4+(r()-.5)*.5,w*.0035,hsl(95+(r()-.5)*30,50,40+(r()-.5)*25))}
+    for(let i=0;i<300;i++){const t=r();stroke(w*(.5+(t-.5)*.1+(1-t)*.2*(r()-.5)),h*(.5+t*.5),w*.03,0,w*.01,hsl(40,35,75,.6))}
+  } else {
+    fill(0,h,[210,30,84],1100,20);
+    fill(h*.85,h,[30,15,88],250,10);
+    const tr=(x0,y0,len,a,wd,d)=>{if(d>6||len<4)return;const x1=x0+Math.cos(a)*len,y1=y0+Math.sin(a)*len;
+      x.strokeStyle=hsl(20,25,22,.95);x.lineWidth=wd;x.lineCap="round";x.beginPath();x.moveTo(x0,y0);x.lineTo(x1,y1);x.stroke();
+      if(d>2&&r()>.6){x.fillStyle=hsl(22,90,52,.95);x.beginPath();x.arc(x1,y1,w*.012,0,7);x.fill()}
+      tr(x1,y1,len*.72,a-.4-r()*.3,wd*.7,d+1);tr(x1,y1,len*.72,a+.3+r()*.3,wd*.7,d+1)};
+    tr(w*.5,h*.92,h*.28,-Math.PI/2,w*.035,0);
+  }
+  return c;
+}
+function artEl(work,w){
+  if(work.img){const i=new Image();i.src=work.img;i.alt=work.title;i.loading="lazy";return i}
+  return paint(work,w);
+}
+function labelHTML(w,{title=true,more=false}={}){
+  const [t,cls]=ST[w.status];
+  return `<span class="wl">${title?`<span class="t">${esc(w.title)}</span>`:""}<span class="meta">${w.year} · ${esc(w.medium)}<br>${esc(w.ho)} (${esc(w.cm)} cm)</span>
+  <span class="price"><span>${w.status==="sold"?"—":won(w.price)}</span><span class="dot ${cls}">${t}</span></span>${more?`<span class="more">자세히 보기 · 문의하기 →</span>`:""}</span>`;
+}
+function workButton(w,size,extra=""){
+  const b=document.createElement("button"); b.type="button"; b.className="work"+(w.status==="sold"?" is-sold":"")+extra;
+  b.innerHTML=`<span class="hang"><span class="frame"><span class="matbox"></span></span></span>${labelHTML(w,{more:true})}`;
+  b.querySelector(".matbox").append(artEl(w,size));
+  b.onclick=()=>openWork(w,b); return b;
+}
+
+/* hero: featured work (not repeated in the grid) */
+const feat = WORKS.find(w=>w.featured) || WORKS[0];
+$("#hero").append(workButton(feat,640));
+
+/* grid */
+function render(f){
+  const g=$("#grid"); g.innerHTML="";
+  WORKS.filter(w=>w!==feat && (f==="all"||w.status===f)).forEach(w=>g.append(workButton(w,480)));
+}
+document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{
+  document.querySelectorAll(".chip").forEach(o=>o.setAttribute("aria-pressed",o===c));render(c.dataset.f)});
+render("all");
+
+/* inquiry dialog */
+const dlg=$("#modal"); let cur=null, opener=null;
+function msg(){
+  if(!cur)return"";
+  const n=$("#fName").value.trim()||"○○○", m=$("#fMsg").value.trim();
+  const head = cur.status==="sale"
+    ? `화실 담의 「${cur.title}」(${cur.ho}, ${won(cur.price)}) 작품 구매 문의드립니다.\n받는 방법: ${$("#fWay").value}`
+    : `화실 담의 「${cur.title}」(${cur.ho})가 ${ST[cur.status][0]}이라고 봤어요. ${cur.status==="hold"?"예약이 취소되면":"비슷한 작품이 나오면"} 알려주세요.`;
+  return `안녕하세요, ${n}입니다.\n${head}`+(m?`\n${m}`:"");
+}
+function upd(){$("#out").textContent=msg()}
+function openWork(w,from){
+  cur=w; opener=from;
+  const a=$("#mArt"); a.innerHTML=""; a.append(artEl(w,640));
+  $("#mNo").textContent=w.no; $("#mTitle").textContent=w.title;
+  $("#mLabel").innerHTML=labelHTML(w,{title:false}); $("#mDesc").textContent=w.desc;
+  $("#goKakao").textContent = w.status==="sale" ? "카카오톡으로 구매 문의" : "카카오톡으로 알림 요청";
+  upd(); document.body.classList.add("locked");
+  dlg.showModal(); $("#mClose").focus();
+}
+dlg.addEventListener("close",()=>{document.body.classList.remove("locked"); opener&&opener.focus()});
+$("#mClose").onclick=$("#mClose2").onclick=()=>dlg.close();
+dlg.addEventListener("click",e=>{if(e.target===dlg)dlg.close()});
+["fName","fWay","fMsg"].forEach(id=>$("#"+id).addEventListener("input",upd));
+$("#inq").addEventListener("submit",e=>e.preventDefault());
+
+function toast(t){const el=$("#toast");el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,3200)}
+function selectText(el){const s=getSelection(),rg=document.createRange();rg.selectNodeContents(el);s.removeAllRanges();s.addRange(rg)}
+function copyMsg(app){
+  const text=msg(), ok=()=>toast(`문의 문장을 복사했어요. ${app} 대화창에 붙여넣으세요.`), fail=()=>{selectText($("#out"));toast("문장이 선택됐어요. 길게 눌러 복사하세요.")};
+  try{ if(!navigator.clipboard) return fail(); navigator.clipboard.writeText(text).then(ok,fail) }catch(e){ fail() }
+}
+const kakao=$("#goKakao"), insta=$("#goInsta");
+kakao.href=SITE.kakao; insta.href=`https://ig.me/m/${encodeURIComponent(SITE.insta)}`;
+kakao.addEventListener("click",()=>copyMsg("카카오톡"));
+insta.addEventListener("click",()=>copyMsg("인스타그램 DM"));
+$("#mPhone").textContent=SITE.phone; $("#polPhone").textContent=SITE.phone;
+$("#footContact").innerHTML=`<a href="https://instagram.com/${encodeURIComponent(SITE.insta)}" target="_blank" rel="noopener">인스타그램 @${esc(SITE.insta)}</a> · ${esc(SITE.phone)} · ${esc(SITE.email)}`;
+</script>
+</body>
+</html>
