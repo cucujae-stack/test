@@ -60,6 +60,17 @@ DRY_RUN=1 python -m strategy.main
 
 `DRY_RUN=1` 이면 SMTP 환경변수 없이도 시그널만 출력합니다.
 
+## 백테스트
+
+같은 선정 규칙(`select_top`)을 과거 매주 첫 거래일에 적용해 시뮬레이션합니다.
+
+- Actions 탭 → **ETF Backtest** → Run workflow (시작일·종목 수·주기·거래비용 입력)
+- 결과: 실행 요약에 CAGR/MDD/샤프, Artifacts 에 `backtest-report` (차트 포함 HTML)
+- 로컬: `python -m strategy.backtest --start 2010-01-01 --out backtest.html`
+- 테스트: `pip install pytest && python -m pytest tests`
+
+가정: 같은 날 종가 체결, 동일 비중, 빈 슬롯은 현금, 세금·환율 미반영. 유니버스가 현재 기준이라 생존 편향이 있습니다.
+
 ## 면책
 
 자동 산출된 참고 자료입니다. 실제 매매 판단과 책임은 본인에게 있습니다. 백테스트 결과가 미래 수익을 보장하지 않습니다.

@@ -29,6 +29,29 @@ class Signal:
     description: str = ""
 
 
+def select_top(
+    closes: pd.DataFrame, top_n: int = TOP_N
+) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
+    """closes 의 마지막 행 기준으로 듀얼 모멘텀 상위 종목을 고른다.
+
+    실시간 시그널(compute_signals)과 백테스트(backtest.py)가 같은 규칙을 쓰도록
+    선정 로직을 여기 한 곳에만 둔다.
+
+    Returns: (top 12M 수익률 내림차순, 전체 momentum, 마지막 종가, 200일선)
+    """
+    last = closes.iloc[-1]
+    past = closes.iloc[-LOOKBACK_DAYS - 1]
+    ma200 = closes.rolling(MA_DAYS).mean().iloc[-1]
+
+    momentum = (last / past - 1.0).dropna()
+
+    qualified = momentum[
+        (momentum > 0) & (last.reindex(momentum.index) >= ma200.reindex(momentum.index))
+    ]
+    top = qualified.sort_values(ascending=False).head(top_n)
+    return top, momentum, last, ma200
+
+
 def compute_signals(
     closes: pd.DataFrame,
     name_map: dict[str, str],
@@ -43,16 +66,7 @@ def compute_signals(
             f"가격 데이터가 부족합니다. 필요 {LOOKBACK_DAYS + 1}일, 현재 {len(closes)}일"
         )
 
-    last = closes.iloc[-1]
-    past = closes.iloc[-LOOKBACK_DAYS - 1]
-    ma200 = closes.rolling(MA_DAYS).mean().iloc[-1]
-
-    momentum = (last / past - 1.0).dropna()
-
-    qualified = momentum[
-        (momentum > 0) & (last.reindex(momentum.index) >= ma200.reindex(momentum.index))
-    ]
-    top = qualified.sort_values(ascending=False).head(TOP_N)
+    top, momentum, last, ma200 = select_top(closes)
     top_set = set(top.index)
 
     signals: list[Signal] = []
