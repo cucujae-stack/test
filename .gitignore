@@ -9,3 +9,6 @@ venv/
 rankings.html
 rankings.csv
 rankings_sample.html
+
+# 백테스트 리포트
+backtest.html
