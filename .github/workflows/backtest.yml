@@ -1,0 +1,60 @@
+name: ETF Backtest
+
+on:
+  workflow_dispatch:
+    inputs:
+      start:
+        description: "가격 수집 시작일 (첫 1년은 워밍업)"
+        default: "2010-01-01"
+      top_n:
+        description: "보유 종목 수"
+        default: "3"
+      freq:
+        description: "리밸런싱 주기 (W=매주, M=매월)"
+        default: "W"
+      cost_bps:
+        description: "거래비용 (bp)"
+        default: "10"
+  pull_request:
+    paths:
+      - "strategy/**"
+      - "tests/**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt pytest
+      - run: python -m pytest -q tests
+
+  backtest:
+    if: github.event_name == 'workflow_dispatch'
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Run backtest
+        env:
+          START: ${{ inputs.start }}
+          TOP_N: ${{ inputs.top_n }}
+          FREQ: ${{ inputs.freq }}
+          COST_BPS: ${{ inputs.cost_bps }}
+        run: |
+          python -m strategy.backtest --start "$START" --top-n "$TOP_N" \
+            --freq "$FREQ" --cost-bps "$COST_BPS" --out backtest.html | tee summary.txt
+          { echo '```'; cat summary.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backtest-report
+          path: backtest.html
