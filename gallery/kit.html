@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>화실 담 인스타 문구</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700&family=IBM+Plex+Sans+KR:wght@400;500&display=swap">
+<style>
+:root{--bg:#e6e9e4;--card:#fbfbf8;--ink:#1d2321;--soft:#56605b;--field:#7f8a84;--accent:#2747a8}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1f1e;--card:#262b2a;--ink:#e9ece8;--soft:#a3aca7;--field:#7a8580;--accent:#8ea6f0;color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 "IBM Plex Sans KR","Apple SD Gothic Neo",sans-serif;padding:32px max(16px,env(safe-area-inset-left,0px))}
+main{max-width:900px;margin:0 auto}
+h1,h3{font-family:"Hahmlet",serif;margin:0}
+h1{font-size:1.9rem} .sub{color:var(--soft);margin:6px 0 28px}
+.kit{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.card{background:var(--card);padding:20px;border:1px solid var(--field)}
+.card h3{font-size:1.05rem;margin-bottom:10px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+pre{white-space:pre-wrap;word-break:keep-all;font:inherit;font-size:.95rem;margin:0}
+button{border:1px solid var(--field);background:var(--bg);color:var(--ink);font:500 .9rem inherit;min-height:40px;padding:6px 14px;cursor:pointer}
+ul{margin:0;padding-left:1.2em} li{margin-bottom:6px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px}
+@media (max-width:600px){.kit{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+  <h1>인스타그램 시작 문구</h1>
+  <p class="sub">판매 사이트에는 연결하지 않은 우리끼리 보는 페이지예요. ○○ 부분만 바꿔서 복사해 쓰세요.</p>
+  <div class="kit" id="kit"></div>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<script>
+const KIT = [
+  {h:"계정 이름 · 아이디", t:"화실 담 | ○○○ 작가 유화\n@atelier.dam"},
+  {h:"프로필 소개 (150자 이내)", t:"🌿 쉰여섯에 붓을 든 엄마의 그림\n꽃 · 바다 · 고향 풍경을 유화로 그립니다\n원화 판매 · 택배 무료 · 7일 반품\n👇 전체 작품 보기"},
+  {h:"첫 게시물 캡션", t:"안녕하세요, 화실 담입니다.\n\n저희 엄마는 쉰여섯에 처음 붓을 드셨어요. 그동안 그린 그림이 거실 벽을 다 채우고 작은 방까지 넘어와서, 좋은 집에 보내드리려고 이 계정을 열었습니다.\n\n첫 번째로 소개할 그림은 「베란다의 작약」(10호, 캔버스에 유채)이에요.\n\n작품 구매·문의는 DM 주세요 🙂"},
+  {h:"작품 게시물 캡션 틀", t:"「작품 제목」\n캔버스에 유채 · 10호 (53.0×45.5cm) · 2026\n\n그림에 얽힌 이야기 한두 줄.\n\n💰 45만 원 (택배 무료, 7일 이내 반품)\n📩 구매 문의는 DM 또는 프로필 링크"},
+  {h:"해시태그 (게시물마다 10~15개)", t:"#유화 #유화그림 #원화판매 #그림판매 #엄마그림 #취미유화 #꽃그림 #풍경화 #거실그림 #인테리어그림 #집들이선물 #작약그림 #바다그림 #아트컬렉터 #신진작가"},
+  {h:"운영 팁", list:["사진은 낮에 창가 자연광에서, 그림과 정면으로 찍으세요. 액자 없이 한 장, 벽에 건 모습 한 장.","릴스로 붓질 과정 15초 영상을 올리면 노출이 크게 늘어요.","가격은 캡션에 적어두세요. 'DM으로 가격 문의'는 문의가 줄어듭니다.","프로필 링크에 판매 사이트 주소를 넣으세요.","일주일에 2~3번, 같은 시간대(저녁 8~9시)에 올리면 좋아요."]}
+];
+const toast=t=>{const e=document.getElementById("toast");e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,2200)};
+KIT.forEach(k=>{
+  const d=document.createElement("div"); d.className="card";
+  const h=document.createElement("h3"); h.textContent=k.h; d.append(h);
+  if(k.list){const ul=document.createElement("ul");k.list.forEach(l=>{const li=document.createElement("li");li.textContent=l;ul.append(li)});d.append(ul)}
+  else{const b=document.createElement("button");b.textContent="복사";h.append(b);const p=document.createElement("pre");p.textContent=k.t;d.append(p);
+    b.onclick=()=>{const fb=()=>{const s=getSelection(),r=document.createRange();r.selectNodeContents(p);s.removeAllRanges();s.addRange(r);toast("선택됐어요. 길게 눌러 복사하세요.")};
+      try{navigator.clipboard?navigator.clipboard.writeText(k.t).then(()=>toast("복사했어요."),fb):fb()}catch(e){fb()}}}
+  document.getElementById("kit").append(d);
+});
+</script>
+</body>
+</html>
